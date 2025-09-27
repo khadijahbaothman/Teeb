@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}بيانات الشخص{% endblock %}
+{% block content %}
+
+<section class="hero-card" style="margin:20px 0;">
+  <h1 style="margin:0 0 6px 0;">بطاقة بيانات الشخص</h1>
+  <p class="muted" style="margin:0">ملخّص طبي مختصر للاستخدام الداخلي.</p>
+</section>
+
+<section class="card">
+  <!-- رأس البطاقة -->
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+    <div>
+      <div style="font-size:22px;font-weight:800">{{ rec["Full Name"] }}</div>
+      <div class="muted" style="margin-top:4px">
+        {{ rec.get("Nationality","-") }} • عمر: {{ rec.get("Age","-") }}
+      </div>
+    </div>
+    {% if rec.get("Nusuk ID") %}
+      <div style="background:var(--pill); border:1px solid var(--brand); color:var(--brand); padding:8px 12px; border-radius:12px; font-weight:700">
+        رقم نسك: {{ rec["Nusuk ID"] }}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- شبكة الحقول الأساسية -->
+  <div class="form-grid" style="row-gap:12px">
+    <div class="field">
+      <label>الحرارة (°C)</label>
+      <div>{{ rec.get("Temp (C)","-") }}</div>
+    </div>
+    <div class="field">
+      <label>ضغط الدم</label>
+      <div>
+        {% set s = rec.get("BP Systolic","-") %}
+        {% set d = rec.get("BP Diastolic","-") %}
+        {{ s }}/{{ d }} mmHg
+      </div>
+    </div>
+    <div class="field">
+      <label>سكر عشوائي</label>
+      <div>{{ rec.get("Random Glucose (mg/dL)","-") }} mg/dL</div>
+    </div>
+    <div class="field">
+      <label>آخر تحديث</label>
+      <div>{{ rec.get("Timestamp","-") }}</div>
+    </div>
+
+    <div class="field full">
+      <label>الأمراض المزمنة</label>
+      <div style="white-space:pre-wrap">{{ rec.get("Chronic Conditions","-") }}</div>
+    </div>
+    <div class="field full">
+      <label>الأدوية الحالية</label>
+      <div style="white-space:pre-wrap">{{ rec.get("Current Meds","-") }}</div>
+    </div>
+    <div class="field full">
+      <label>الحساسية</label>
+      <div style="white-space:pre-wrap">{{ rec.get("Allergies","-") }}</div>
+    </div>
+    <div class="field full">
+      <label>التطعيمات</label>
+      <div style="white-space:pre-wrap">{{ rec.get("Vaccinations","-") }}</div>
+    </div>
+    <div class="field full">
+      <label>ملاحظات طبية</label>
+      <div style="white-space:pre-wrap">{{ rec.get("Medical Notes","-") }}</div>
+    </div>
+  </div>
+
+  <!-- أزرار الإجراءات -->
+  <div class="actions" style="margin-top:16px">
+    <a class="btn btn-ghost" href="{{ url_for('index') }}">عودة للنموذج</a>
+    <button class="btn-outline" type="button" onclick="window.print()">طباعة</button>
+    <button class="btn" type="button" onclick="copyLink(this)">نسخ الرابط</button>
+  </div>
+</section>
+
+<script>
+function copyLink(btn){
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(()=>{
+    btn.textContent = 'تم النسخ ✓';
+    setTimeout(()=>btn.textContent='نسخ الرابط', 1500);
+  });
+}
+</script>
+
+{% endblock %}
