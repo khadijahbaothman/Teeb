@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 from uuid import uuid4
 import json
+import os, re, qrcode
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")
@@ -119,18 +120,24 @@ def submit():
             json.dump(record, f, ensure_ascii=False, indent=2)
 
         # --- Generate QR summary ---
+        base = os.environ.get("BASE_URL", request.host_url.rstrip("/"))
+        person_url = f"{base}/p/{rid}"
+
         qr_dir = DATA_DIR / "qr"
-        qr_dir.mkdir(exist_ok=True)
-        import qrcode, re
-        qr_text = (
-            f"Name: {full_name}\nAge: {age}\nNat: {nationality}\nNusuk: {nusuk_id}\n"
-            f"Chronic: {chronic}\nMeds: {meds}\nAllergy: {allergies}\nVacc: {vacc}\n"
-            f"Temp: {temp_c} C, BP: {bp_sys}/{bp_dia}, Glu: {rand_glu} mg/dL\n"
-            f"Notes: {notes}"
+        qr_dir.mkdir(parents=True, exist_ok=True)
+
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=4
         )
-        safe = re.sub(r"[^\w\-]+", "_", full_name)[:32]
-        fname = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe}.png"
-        qrcode.make(qr_text).save(qr_dir / fname)
+        qr.add_data(person_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\\w\\-]+','_', full_name)[:32]}.png"
+        img.save(qr_dir / qr_name)
 
         return render_template("success.html", qr_url=url_for("qr_file", fname=fname))
     except Exception as e:
