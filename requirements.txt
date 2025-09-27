@@ -3,3 +3,5 @@ pandas
 openpyxl
 qrcode
 pillow
+numpy<2
+gunicorn
