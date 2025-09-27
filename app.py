@@ -63,18 +63,21 @@ def append_to_excel(record: dict, excel_path: Path):
 def index():
     return render_template("index.html")
 
-
 @app.route("/submit", methods=["POST"])
 def submit():
+    from uuid import uuid4
+    from datetime import datetime
+    import json, os, re, qrcode
+
     # --- Basic fields ---
-    full_name  = request.form.get("full_name", "").strip()
-    age        = request.form.get("age", "").strip()
-    nationality= request.form.get("nationality", "").strip()
-    nusuk_id   = request.form.get("nusuk_id", "").strip()
+    full_name   = request.form.get("full_name", "").strip()
+    age         = request.form.get("age", "").strip()
+    nationality = request.form.get("nationality", "").strip()
+    nusuk_id    = request.form.get("nusuk_id", "").strip()
 
     # --- Clinical text blocks ---
-    chronic = request.form.get("chronic", "").strip()
-    meds    = request.form.get("meds", "").strip()
+    chronic   = request.form.get("chronic", "").strip()
+    meds      = request.form.get("meds", "").strip()
     allergies = request.form.get("allergies", "").strip()
     vacc      = request.form.get("vacc", "").strip()
 
@@ -92,6 +95,7 @@ def submit():
         return redirect(url_for("index"))
 
     try:
+        # 1) احفظ في Excel
         record = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Full Name": full_name,
@@ -110,22 +114,21 @@ def submit():
         }
         append_to_excel(record, EXCEL_PATH)
 
-        rid = uuid4().hex[:10]  # معرّف قصير
+        # 2) أنشئ معرّف وملف JSON
+        rid = uuid4().hex[:10]
         record["Record ID"] = rid
-
-        # خزّنه بجانب الإكسل كملف JSON
         REC_DIR = DATA_DIR / "records"
         REC_DIR.mkdir(exist_ok=True)
         with open(REC_DIR / f"{rid}.json", "w", encoding="utf-8") as f:
             json.dump(record, f, ensure_ascii=False, indent=2)
 
-        # --- Generate QR summary ---
+        # 3) ابني الرابط العام (يستخدم BASE_URL إن وُجد)
         base = os.environ.get("BASE_URL", request.host_url.rstrip("/"))
         person_url = f"{base}/p/{rid}"
 
+        # 4) أنشئ QR واضح
         qr_dir = DATA_DIR / "qr"
         qr_dir.mkdir(parents=True, exist_ok=True)
-
         qr = qrcode.QRCode(
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_M,
@@ -139,7 +142,14 @@ def submit():
         qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\\w\\-]+','_', full_name)[:32]}.png"
         img.save(qr_dir / qr_name)
 
-        return render_template("success.html", qr_url=url_for("qr_file", fname=fname))
+        print("QR URL =>", person_url)  # يظهر في Logs على Render
+
+        return render_template(
+            "success.html",
+            qr_url=url_for("qr_file", fname=qr_name),
+            person_url=person_url
+        )
+
     except Exception as e:
         flash(f"حدث خطأ أثناء الحفظ: {e}")
         return redirect(url_for("index"))
