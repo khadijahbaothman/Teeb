@@ -3,9 +3,6 @@ from datetime import datetime
 import pandas as pd
 from pathlib import Path
 import os
-from uuid import uuid4
-import json
-import os, re, qrcode
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")
@@ -30,6 +27,9 @@ COLUMNS = [
     "Age",
     "Nationality",
     "Nusuk ID",
+    "National ID / Iqama",
+    "Phone",
+    "Emergency Phone",
     "Chronic Conditions",
     "Current Meds",
     "Allergies",
@@ -43,18 +43,23 @@ COLUMNS = [
 
 
 def append_to_excel(record: dict, excel_path: Path):
-    """Append a single record (dict) to an xlsx file, creating it if missing."""
+    """Upsert a record into xlsx by Nusuk ID. If exists -> update row, else append."""
     df_new = pd.DataFrame([record], columns=COLUMNS)
+    key_id = str(record.get("Nusuk ID", "")).strip()
     if excel_path.exists():
-        # Load existing, append, and rewrite (simple & reliable)
-        df_old = pd.read_excel(excel_path)
-        df_all = pd.concat([df_old, df_new], ignore_index=True)
-        # Keep only known columns (in case file was edited)
+        df = pd.read_excel(excel_path)
+        # Ensure all expected columns exist
         for col in COLUMNS:
-            if col not in df_all.columns:
-                df_all[col] = ""
-        df_all = df_all[COLUMNS]
-        df_all.to_excel(excel_path, index=False, engine="openpyxl")
+            if col not in df.columns:
+                df[col] = ""
+        if key_id and "Nusuk ID" in df.columns and key_id in df["Nusuk ID"].astype(str).values:
+            idx = df.index[df["Nusuk ID"].astype(str) == key_id][0]
+            for col in COLUMNS:
+                df.at[idx, col] = record.get(col, df.at[idx, col])
+        else:
+            df = pd.concat([df, df_new], ignore_index=True)
+        df = df[COLUMNS]
+        df.to_excel(excel_path, index=False, engine="openpyxl")
     else:
         df_new.to_excel(excel_path, index=False, engine="openpyxl")
 
@@ -62,6 +67,7 @@ def append_to_excel(record: dict, excel_path: Path):
 @app.route("/", methods=["GET"]) 
 def index():
     return render_template("index.html")
+
 
 @app.route("/submit", methods=["POST"])
 def submit():
@@ -74,6 +80,10 @@ def submit():
     age         = request.form.get("age", "").strip()
     nationality = request.form.get("nationality", "").strip()
     nusuk_id    = request.form.get("nusuk_id", "").strip()
+
+    national_id = request.form.get("national_id", "").strip()
+    phone       = request.form.get("phone", "").strip()
+    phone_emg   = request.form.get("phone_emg", "").strip()
 
     # --- Clinical text blocks ---
     chronic   = request.form.get("chronic", "").strip()
@@ -91,17 +101,20 @@ def submit():
 
     # Required
     if not full_name or not age or not nationality or not nusuk_id:
-        flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك")
+        flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك ورقم الجوال")
         return redirect(url_for("index"))
 
     try:
-        # 1) احفظ في Excel
+        # 1) Prepare record
         record = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Full Name": full_name,
             "Age": age,
             "Nationality": nationality,
             "Nusuk ID": nusuk_id,
+            "National ID / Iqama": national_id,
+            "Phone": phone,
+            "Emergency Phone": phone_emg,
             "Chronic Conditions": chronic,
             "Current Meds": meds,
             "Allergies": allergies,
@@ -112,21 +125,23 @@ def submit():
             "Random Glucose (mg/dL)": rand_glu,
             "Medical Notes": notes,
         }
+        # 2) Upsert to Excel by Phone
         append_to_excel(record, EXCEL_PATH)
 
-        # 2) أنشئ معرّف وملف JSON
-        rid = uuid4().hex[:10]
+        # 3) Use Nusuk ID as record id
+        rid = re.sub(r"[^0-9]+", "", nusuk_id) or nusuk_id
         record["Record ID"] = rid
+
+        # 4) Save JSON snapshot
         REC_DIR = DATA_DIR / "records"
         REC_DIR.mkdir(exist_ok=True)
         with open(REC_DIR / f"{rid}.json", "w", encoding="utf-8") as f:
             json.dump(record, f, ensure_ascii=False, indent=2)
 
-        # 3) ابني الرابط العام (يستخدم BASE_URL إن وُجد)
+        # 5) Build public URL & QR
         base = os.environ.get("BASE_URL", request.host_url.rstrip("/"))
         person_url = f"{base}/p/{rid}"
 
-        # 4) أنشئ QR واضح
         qr_dir = DATA_DIR / "qr"
         qr_dir.mkdir(parents=True, exist_ok=True)
         qr = qrcode.QRCode(
@@ -139,46 +154,41 @@ def submit():
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
 
-        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\\w\\-]+','_', full_name)[:32]}.png"
+        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\w\-]+','_', full_name)[:32]}.png"
         img.save(qr_dir / qr_name)
 
-        print("QR URL =>", person_url)  # يظهر في Logs على Render
+        print("QR URL =>", person_url)
+        return render_template("success.html", qr_url=url_for("qr_file", fname=qr_name), person_url=person_url)
+    except Exception as e:
+        flash(f"حدث خطأ أثناء الحفظ: {e}")
+        return redirect(url_for("index"))
 
-        return render_template(
-            "success.html",
-            qr_url=url_for("qr_file", fname=qr_name),
-            person_url=person_url
-        )
+    try:
+        # Normalize date (keep as string in Excel but in ISO format)
+        if visit_date:
+            # trust input date as is; could convert to datetime if needed
+            pass
 
+        record = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Full Name": full_name,
+            "Email": email,
+            "Phone": phone,
+            "Nationality": nationality,
+            "City": city,
+            "Visit Date": visit_date,
+            "Purpose": purpose,
+            "Notes": notes,
+        }
+        append_to_excel(record, EXCEL_PATH)
+        return render_template("success.html", download_url=url_for("download_excel"))
     except Exception as e:
         flash(f"حدث خطأ أثناء الحفظ: {e}")
         return redirect(url_for("index"))
 
 
-@app.route("/download")
-def download_excel():
-    if not EXCEL_PATH.exists():
-        # If no file yet, create empty workbook with headers
-        append_to_excel({c: "" for c in COLUMNS}, EXCEL_PATH)
-        # and drop the empty row
-        df = pd.read_excel(EXCEL_PATH)
-        df = df.iloc[0:0]
-        df.to_excel(EXCEL_PATH, index=False, engine="openpyxl")
-    return send_file(EXCEL_PATH, as_attachment=True, download_name="submissions.xlsx")
+# Download route removed per request: no Excel download exposure.
 
-@app.route("/qr/<path:fname>")
-def qr_file(fname):
-    return send_file(DATA_DIR / "qr" / fname, mimetype="image/png")
-
-@app.route("/p/<rid>")
-def person_view(rid):
-    import json
-    rec_path = DATA_DIR / "records" / f"{rid}.json"
-    if not rec_path.exists():
-        return "Record not found", 404
-    with open(rec_path, "r", encoding="utf-8") as f:
-        rec = json.load(f)
-    return render_template("person.html", rec=rec)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)

@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}تواصل معنا{% endblock %}
+{% block title %}البيانات الطبية الأساسية{% endblock %}
 {% block content %}
 <section class="hero with-image" style="background-image:url('{{ url_for('static', filename='hero-fallback.jpg') }}');">
   <div class="hero-center">
     <div>
       <h1 class="hero-title">البيانات الطبية الأساسية</h1>
-      <p class="hero-sub">عبّئ الحقول بدقة. يتم الحفظ داخليًا ويولّد رمز QR بعد الإرسال.</p>
+      <p class="hero-sub">عبّئ الحقول بدقة. يتم الحفظ داخليًا، و يُنشأ رمز QR مربوط برقم الجوال.</p>
     </div>
   </div>
 </section>
@@ -16,15 +16,24 @@
       <input name="full_name" required placeholder="محمد علي الحاج"></div>
     <div class="field"><label>العمر <span class="req">*</span></label>
       <input name="age" type="number" min="0" required placeholder="62"></div>
-    <div class="field"><label>جنسية <span class="req">*</span></label>
+    <div class="field"><label>الجنسية <span class="req">*</span></label>
       <input name="nationality" required placeholder="مصر"></div>
     <div class="field"><label>رقم نسك <span class="req">*</span></label>
       <input name="nusuk_id" required placeholder="123456"></div>
 
+    <div class="field"><label>رقم الهوية/الإقامة</label>
+      <input name="national_id" placeholder="مثال: 2XXXXXXXXX"></div>
+    <div class="field"><label>رقم الجوال <span class="req">*</span></label>
+      <input name="phone" required placeholder="05xxxxxxxx"></div>
+    <div class="field"><label>رقم جوال الطوارئ</label>
+      <input name="phone_emg" placeholder="05xxxxxxxx"></div>
+
     <div class="field full"><label>الأمراض المزمنة</label>
-      <textarea name="chronic" rows="3" placeholder="سكري (Type II) — منذ 10 سنوات&#10;ضغط دم عالي — تحت دواء"></textarea></div>
+      <textarea name="chronic" rows="3" placeholder="سكري (Type II) — منذ 10 سنوات
+ضغط دم عالي — تحت دواء"></textarea></div>
     <div class="field full"><label>الأدوية الحالية</label>
-      <textarea name="meds" rows="3" placeholder="ميتفورمين 500mg — مرتين يومياً&#10;أملوديبين 5mg — يومياً"></textarea></div>
+      <textarea name="meds" rows="3" placeholder="ميتفورمين 500mg — مرتين يومياً
+أملوديبين 5mg — يومياً"></textarea></div>
     <div class="field full"><label>حساسية</label>
       <textarea name="allergies" rows="2" placeholder="بنسيلين — طفح جلدي (متوسطة)"></textarea></div>
     <div class="field full"><label>تطعيمات</label>
@@ -40,10 +49,11 @@
       <input name="rand_glu" type="number" placeholder="160"></div>
 
     <div class="field full"><label>ملاحظات طبية</label>
-      <textarea name="notes" rows="3" placeholder="يحتاج متابعة غذائية وتنظيم دواء الصيام&#10;حالة متوسطة، لا حاجة لإسعاف فوري"></textarea></div>
+      <textarea name="notes" rows="3" placeholder="يحتاج متابعة غذائية وتنظيم دواء الصيام
+حالة متوسطة، لا حاجة لإسعاف فوري"></textarea></div>
 
     <div class="actions">
-      <button class="btn" type="submit">إرسال وإنشاء QR</button>
+      <button class="btn" type="submit">إرسال وإنشاء/تحديث QR</button>
     </div>
   </form>
 </section>

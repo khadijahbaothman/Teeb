@@ -1,13 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}تم الحفظ{% endblock %}
+{% block title %}تم الإرسال{% endblock %}
 {% block content %}
 <section class="card center">
   <div class="success-icon">✓</div>
-  <h2>تم حفظ البيانات وإنشاء رمز QR</h2>
-  <p class="muted">امسح الرمز لمشاركة الملخص الطبي بسرعة.</p>
-  {% if qr_url %}
-    <p><img src="{{ qr_url }}" alt="QR" style="max-width:220px;border-radius:12px;border:1px solid var(--border)"></p>
-  {% endif %}
+  <h2>وصلتنا رسالتك بنجاح</h2>
+  <p class="muted">يمكنك تنزيل ملف Excel المحدث في أي وقت.</p>
+  
   <p><a class="btn btn-ghost" href="{{ url_for('index') }}">عودة للنموذج</a></p>
 </section>
 {% endblock %}
