@@ -4,19 +4,23 @@ import pandas as pd
 from pathlib import Path
 import os
 
+app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")
 
-# Provide a Jinja helper for current year if needed
-@app.context_processor
-def inject_helpers():
-    from datetime import datetime
-    return {"year": datetime.now().year}
+# Disable caching in dev so CSS refreshes
+@app.after_request
+def add_no_cache_headers(resp):
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
-# Where we'll store the Excel workbook
+# Storage
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 EXCEL_PATH = DATA_DIR / "submissions.xlsx"
 
-# Columns order for the Excel sheet
+# Columns (ordered) for Excel
 COLUMNS = [
     "Timestamp",
     "Full Name",
@@ -35,16 +39,17 @@ COLUMNS = [
     "BP Diastolic",
     "Random Glucose (mg/dL)",
     "Medical Notes",
+    "Record ID",
 ]
 
 
 def append_to_excel(record: dict, excel_path: Path):
-    """Upsert a record into xlsx by Nusuk ID. If exists -> update row, else append."""
+    """Upsert record by Nusuk ID. If Nusuk ID exists → update that row, else append."""
     df_new = pd.DataFrame([record], columns=COLUMNS)
     key_id = str(record.get("Nusuk ID", "")).strip()
     if excel_path.exists():
         df = pd.read_excel(excel_path)
-        # Ensure all expected columns exist
+        # ensure missing columns exist
         for col in COLUMNS:
             if col not in df.columns:
                 df[col] = ""
@@ -60,7 +65,7 @@ def append_to_excel(record: dict, excel_path: Path):
         df_new.to_excel(excel_path, index=False, engine="openpyxl")
 
 
-@app.route("/", methods=["GET"]) 
+@app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
 
@@ -68,8 +73,7 @@ def index():
 @app.route("/submit", methods=["POST"])
 def submit():
     from uuid import uuid4
-    from datetime import datetime
-    import json, os, re, qrcode
+    import json, re, qrcode
 
     # --- Basic fields ---
     full_name   = request.form.get("full_name", "").strip()
@@ -97,11 +101,12 @@ def submit():
 
     # Required
     if not full_name or not age or not nationality or not nusuk_id:
-        flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك ورقم الجوال")
+        flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك")
         return redirect(url_for("index"))
 
     try:
-        # 1) Prepare record
+        # 1) Build record and upsert to Excel
+        rid = re.sub(r"[^0-9]+", "", nusuk_id) or nusuk_id
         record = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Full Name": full_name,
@@ -120,21 +125,18 @@ def submit():
             "BP Diastolic": bp_dia,
             "Random Glucose (mg/dL)": rand_glu,
             "Medical Notes": notes,
+            "Record ID": rid,
         }
-        # 2) Upsert to Excel by Phone
         append_to_excel(record, EXCEL_PATH)
 
-        # 3) Use Nusuk ID as record id
-        rid = re.sub(r"[^0-9]+", "", nusuk_id) or nusuk_id
-        record["Record ID"] = rid
-
-        # 4) Save JSON snapshot
+        # 2) Save JSON snapshot keyed by Nusuk ID
         REC_DIR = DATA_DIR / "records"
         REC_DIR.mkdir(exist_ok=True)
         with open(REC_DIR / f"{rid}.json", "w", encoding="utf-8") as f:
+            import json
             json.dump(record, f, ensure_ascii=False, indent=2)
 
-        # 5) Build public URL & QR
+        # 3) Build public URL & QR (uses BASE_URL if set)
         base = os.environ.get("BASE_URL", request.host_url.rstrip("/"))
         person_url = f"{base}/p/{rid}"
 
@@ -144,13 +146,13 @@ def submit():
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_M,
             box_size=10,
-            border=4
+            border=4,
         )
         qr.add_data(person_url)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
-
-        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\\w\\-]+','_', full_name)[:32]}.png"
+        safe_name = re.sub(r"[^\w\-]+", "_", full_name)[:32]
+        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe_name}.png"
         img.save(qr_dir / qr_name)
 
         print("QR URL =>", person_url)
@@ -159,46 +161,22 @@ def submit():
         flash(f"حدث خطأ أثناء الحفظ: {e}")
         return redirect(url_for("index"))
 
-    try:
-        record = {
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Full Name": full_name,
-            "Age": age,
-            "Nationality": nationality,
-            "Nusuk ID": nusuk_id,
-            "Chronic Conditions": chronic,
-            "Current Meds": meds,
-            "Allergies": allergies,
-            "Vaccinations": vacc,
-            "Temp (C)": temp_c,
-            "BP Systolic": bp_sys,
-            "BP Diastolic": bp_dia,
-            "Random Glucose (mg/dL)": rand_glu,
-            "Medical Notes": notes,
-        }
-        append_to_excel(record, EXCEL_PATH)
 
-        # Generate QR summarizing key fields
-        QR_DIR = DATA_DIR / "qr"
-        QR_DIR.mkdir(exist_ok=True)
-        import qrcode, re
-        qr_text = (
-            f"Name: {full_name}\nAge: {age}\nNat: {nationality}\nNusuk: {nusuk_id}\n"
-            f"Chronic: {chronic}\nMeds: {meds}\nAllergy: {allergies}\nVacc: {vacc}\n"
-            f"Temp: {temp_c} C, BP: {bp_sys}/{bp_dia}, Glu: {rand_glu} mg/dL\n"
-            f"Notes: {notes}"
-        )
-        safe = re.sub(r"[^\w\-]+","_", full_name)[:32]
-        fname = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe}.png"
-        qrcode.make(qr_text).save(QR_DIR / fname)
-        return render_template("success.html", qr_url=url_for("qr_file", fname=fname))
-    except Exception as e:
-        flash(f"حدث خطأ أثناء الحفظ: {e}")
-        return redirect(url_for("index"))
-
-@app.route('/qr/<path:fname>')
+@app.route("/qr/<path:fname>")
 def qr_file(fname):
-    return send_file(DATA_DIR / 'qr' / fname, mimetype='image/png')
+    return send_file(DATA_DIR / "qr" / fname, mimetype="image/png")
+
+
+@app.route("/p/<rid>")
+def person_view(rid):
+    import json
+    rec_path = DATA_DIR / "records" / f"{rid}.json"
+    if not rec_path.exists():
+        return "Record not found", 404
+    with open(rec_path, "r", encoding="utf-8") as f:
+        rec = json.load(f)
+    return render_template("person.html", rec=rec)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)

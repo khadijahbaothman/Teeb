@@ -6,7 +6,7 @@
   <title>{% block title %}بوابة الزيارة{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link href="{{ url_for('static', filename='styles.css', v=4) }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='styles.css', v=5) }}" rel="stylesheet">
 </head>
 <body>
   <header class="nav">
@@ -27,7 +27,6 @@
         <div class="alert">{{ messages[0] }}</div>
       {% endif %}
     {% endwith %}
-
     {% block content %}{% endblock %}
   </main>
 
