@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 import os
 
-\1
+
 # Provide a Jinja helper for current year if needed
 @app.context_processor
 def inject_helpers():
