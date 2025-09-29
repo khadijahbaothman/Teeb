@@ -4,16 +4,12 @@ import pandas as pd
 from pathlib import Path
 import os
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")
-
-# Disable aggressive caching during development so CSS changes show immediately
-@app.after_request
-def add_no_cache_headers(resp):
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    resp.headers["Pragma"] = "no-cache"
-    resp.headers["Expires"] = "0"
-    return resp
+\1
+# Provide a Jinja helper for current year if needed
+@app.context_processor
+def inject_helpers():
+    from datetime import datetime
+    return {"year": datetime.now().year}
 
 # Where we'll store the Excel workbook
 DATA_DIR = Path("data")
@@ -154,7 +150,7 @@ def submit():
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
 
-        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\w\-]+','_', full_name)[:32]}.png"
+        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\\w\\-]+','_', full_name)[:32]}.png"
         img.save(qr_dir / qr_name)
 
         print("QR URL =>", person_url)
@@ -164,32 +160,45 @@ def submit():
         return redirect(url_for("index"))
 
     try:
-        # Normalize date (keep as string in Excel but in ISO format)
-        if visit_date:
-            # trust input date as is; could convert to datetime if needed
-            pass
-
         record = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Full Name": full_name,
-            "Email": email,
-            "Phone": phone,
+            "Age": age,
             "Nationality": nationality,
-            "City": city,
-            "Visit Date": visit_date,
-            "Purpose": purpose,
-            "Notes": notes,
+            "Nusuk ID": nusuk_id,
+            "Chronic Conditions": chronic,
+            "Current Meds": meds,
+            "Allergies": allergies,
+            "Vaccinations": vacc,
+            "Temp (C)": temp_c,
+            "BP Systolic": bp_sys,
+            "BP Diastolic": bp_dia,
+            "Random Glucose (mg/dL)": rand_glu,
+            "Medical Notes": notes,
         }
         append_to_excel(record, EXCEL_PATH)
-        return render_template("success.html", download_url=url_for("download_excel"))
+
+        # Generate QR summarizing key fields
+        QR_DIR = DATA_DIR / "qr"
+        QR_DIR.mkdir(exist_ok=True)
+        import qrcode, re
+        qr_text = (
+            f"Name: {full_name}\nAge: {age}\nNat: {nationality}\nNusuk: {nusuk_id}\n"
+            f"Chronic: {chronic}\nMeds: {meds}\nAllergy: {allergies}\nVacc: {vacc}\n"
+            f"Temp: {temp_c} C, BP: {bp_sys}/{bp_dia}, Glu: {rand_glu} mg/dL\n"
+            f"Notes: {notes}"
+        )
+        safe = re.sub(r"[^\w\-]+","_", full_name)[:32]
+        fname = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe}.png"
+        qrcode.make(qr_text).save(QR_DIR / fname)
+        return render_template("success.html", qr_url=url_for("qr_file", fname=fname))
     except Exception as e:
         flash(f"حدث خطأ أثناء الحفظ: {e}")
         return redirect(url_for("index"))
 
-
-# Download route removed per request: no Excel download exposure.
-
+@app.route('/qr/<path:fname>')
+def qr_file(fname):
+    return send_file(DATA_DIR / 'qr' / fname, mimetype='image/png')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)
-
