@@ -359,6 +359,214 @@ textarea:focus {
   text-shadow: 0 2px 6px rgba(0, 0, 0, .35)
 }
 
+/* ===== success page background (full-screen image) ===== */
+.success-wrap {
+  min-height: calc(100dvh - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 16px;
+}
+
+/* لأن مسار CSS نسبي، نخلي الخلفية inline في الصفحة أسهل:
+   لكن لو تبي من CSS مباشرة، استبدلي هذا السطر في success.html:
+   <section class="success-wrap" style="background-image:url('{{ url_for('static', filename='success-bg.jpg') }}')">
+*/
+
+/* ===== ticket card ===== */
+
+.pass-card {
+  width: min(420px, 92vw);
+  /* أضيق */
+  min-height: 640px;
+  /* أطول */
+  padding: 24px 22px 30px;
+  border-radius: 22px;
+  color: #eaf5ef;
+  background-image: url("static/bg22.jpeg");
+  background:
+    radial-gradient(120% 80% at 80% 0%, rgba(255, 255, 255, .08) 0, transparent 60%),
+    radial-gradient(120% 80% at 0% 100%, rgba(255, 255, 255, .06) 0, transparent 55%),
+    linear-gradient(180deg, #0f5a4f 0%, #0b3a34 85%);
+    background-image: 
+    url("../static/bg22.jpeg"), /* أو غيري الاسم حسب صورة الخلفية */
+    radial-gradient(120% 80% at 80% 0%, rgba(255,255,255,.08) 0, transparent 60%),
+    radial-gradient(120% 80% at 0% 100%, rgba(255,255,255,.06) 0, transparent 55%),
+    linear-gradient(180deg, #0f5a4f 0%, #0b3a34 85%);
+  background-size: cover;
+  background-position: center;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, .4),
+    inset 0 0 0 1px rgba(255, 255, 255, .05);
+  position: relative;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* الشق العلوي */
+.pass-card .notch {
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 36px;
+  background: #34B8EC;
+  border-radius: 0 0 36px 36px;
+  box-shadow: inset 0 2px 10px rgba(255, 255, 255, .06), 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+.info-right {
+  margin-top: 40px; /* نزّل المعلومات شوي تحت */
+}
+
+.name-big {
+  text-align: center;
+  font-size: 45px;             /* أكبر من قبل */
+  font-weight: 800;
+  margin: 6px 0 8px;
+  text-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+.meta-line{
+  
+  display:flex; gap:10px; justify-content:center; /* القيم والنص يمين */
+  margin-bottom: 8px;
+}
+.meta-line .label{ color:#cfe8e0; font-size:13px; }
+.meta-line .value{ font-size:18px; font-weight:700; }
+/* الإطار الأزرق */
+.pass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* يحيط البطاقة بالكامل */
+  border-radius: 22px;
+  border: 2px solid #3ebfff;
+  /* اللون الأزرق */
+  box-shadow: 0 0 10px #3ebfff, 0 0 20px #3ebfff55;
+  /* توهج */
+  pointer-events: none;
+  /* ما يأثر على الكليك */
+}
+
+/* header */
+.pass-card .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pass-card .logo {
+  width: 20%;
+}
+
+.pass-card .title {
+  font-weight: 800;
+  letter-spacing: .2px;
+  opacity: .9
+}
+
+/* name centered */
+.pass-card .name {
+  margin: 12px 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.partner {
+  display: flex;
+  justify-content: center; /* يحط اللوقو في النص أفقيًا */
+  align-items: center;      /* يحطه في النص عموديًا (لو في ارتفاع معين) */
+  margin-top: 20px;         /* مسافة من فوق */
+}
+
+.btn.download {
+  position: relative;
+  background: linear-gradient(90deg, #3ebfff, #60a5fa); /* تدرّج أزرق فاتح */
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 12px 22px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(62,191,255, 0.4);
+  transition: all .2s ease;
+  z-index: 50;
+}
+.btn.download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(62,191,255, 0.55);
+  background: linear-gradient(90deg, #60a5fa, #3ebfff);
+}
+.partner img {
+  max-width: 80%; /* غيري الحجم حسب الصورة */
+  height: auto;
+}
+
+/* meta row (right = Nusuk, left = phone) */
+.pass-card .meta {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.pass-card .item {
+  min-width: 180px;
+}
+
+.pass-card .label {
+  color: #cfe8e0;
+  font-size: 13px;
+  opacity: .95;
+}
+
+.pass-card .value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* QR */
+.pass-card .qr-box {
+  margin-top: auto;  /* ينزل الـQR للأسفل */
+  margin-bottom: 10px;
+}
+
+.pass-card .qr {
+  width: 240px;
+  height: auto;
+  background: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 26px rgba(0,0,0,.28);
+}
+
+/* buttons row already exists (from base.css), keep it centered */
+.actions .btn {
+  min-width: 160px;
+}
+
+@media (max-width:560px) {
+  .pass-card .name {
+    font-size: 22px
+  }
+
+  .pass-card .value {
+    font-size: 16px
+  }
+
+  .pass-card .qr {
+    width: min(250px, 78vw)
+  }
+}
+
 @media (max-width:820px) {
   .form-grid {
     grid-template-columns: 1fr

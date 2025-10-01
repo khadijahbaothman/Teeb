@@ -156,7 +156,12 @@ def submit():
         img.save(qr_dir / qr_name)
 
         print("QR URL =>", person_url)
-        return render_template("success.html", qr_url=url_for("qr_file", fname=qr_name), person_url=person_url)
+        return render_template( "success.html",
+    qr_url=url_for("qr_file", fname=qr_name),
+    person_url=person_url,
+    full_name=full_name,
+    nusuk_id=nusuk_id,
+    phone=phone)
     except Exception as e:
         flash(f"حدث خطأ أثناء الحفظ: {e}")
         return redirect(url_for("index"))

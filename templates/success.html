@@ -1,16 +1,76 @@
 {% extends 'base.html' %}
-{% block title %}تم الحفظ{% endblock %}
+{% block title %}بطاقة الزائر{% endblock %}
 {% block content %}
-<section class="card center">
-  <div class="success-icon">✓</div>
-  <h2>تم حفظ البيانات وإنشاء رمز QR</h2>
-  <p class="muted">امسح الرمز لمشاركة الملخص الطبي بسرعة.</p>
-  {% if qr_url %}
-    <p><img src="{{ qr_url }}" alt="QR" style="max-width:220px;border-radius:12px;border:1px solid var(--border)"></p>
-  {% endif %}
-  {% if person_url %}
-    <p class="muted" style="direction:ltr">{{ person_url }}</p>
-  {% endif %}
-  <p><a class="btn btn-ghost" href="{{ url_for('index') }}">عودة للنموذج</a></p>
-</section>
+
+<section class="success-wrap">
+  <div class="pass-card" id="passCard" dir="rtl">
+    <div class="notch"></div>
+  
+    <!-- رأس البطاقة -->
+    <div class="head">
+      <img src="{{ url_for('static', filename='logo33.png') }}" alt="logo" class="logo">
+      <div class="title">بطاقة الزائر</div>
+    </div>
+  
+    <!-- معلومات يمين: اسم/نسك/جوال -->
+    <div class="info-right">
+      <div class="name-big">{{ full_name }}</div>
+      <div class="meta-line">
+        <span class="label">رقم نسك:</span>
+        <span class="value">{{ nusuk_id }}</span>
+      </div>
+      <div class="meta-line">
+        <span class="label">رقم الجوال:</span>
+        <span class="value">{{ phone or "—" }}</span>
+      </div>
+    </div>
+  
+    <!-- QR أعلى قليلًا -->
+    <div class="qr-box raised">
+      <img src="{{ qr_url }}" class="qr" alt="QR">
+    </div>
+  
+    <!-- مكان الشعارين بالأسفل في الوسط -->
+    <div class="partner">
+      <!-- غيّري src إلى شعاراتك -->
+      <img src="{{ url_for('static', filename='logo44.png') }}" alt="partner1" class="partner"/>
+    </div>
+  </div>
+
+  <div class="actions" style="justify-content:center; margin-top:16px">
+    <button id="downloadBtn" class="btn download">تحميل البطاقة</button>
+    </div>
+
+<!-- html2canvas لتحميل البطاقة كصورة -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  const node = document.getElementById('passCard');
+  const canvas = await html2canvas(node, { backgroundColor: null, scale: 2, useCORS: true });
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = `pass_{{ nusuk_id|e }}.png`;
+  a.click();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  const card = document.getElementById('passCard'); // البطاقة نفسها
+  const canvas = await html2canvas(card, {
+    backgroundColor: null, // يحافظ على الشفافية
+    scale: 2,              // جودة أعلى
+    useCORS: true
+  });
+
+  const image = canvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = image;
+  link.download = `بطاقة_{{ full_name|e }}.png`;
+  link.click();
+});
+</script>
+
 {% endblock %}
