@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}البيانات الطبية الأساسية{% endblock %}
 {% block content %}
-<section class="hero with-image" style="background-image:url('{{ url_for('static', filename='hero-fallback.jpg') }}');">
+<section class="hero with-image" style="background-image:url('{{ url_for('static', filename='bg22.jpeg') }}');">
   <div class="hero-center">
     <div>
       <h1 class="hero-title">البيانات الطبية الأساسية</h1>
@@ -10,7 +10,7 @@
   </div>
 </section>
 
-<section class="card">
+<section class="card glass">
   <form action="{{ url_for('submit') }}" method="post" class="form-grid">
     <div class="field"><label>الاسم <span class="req">*</span></label>
       <input name="full_name" required placeholder="محمد علي الحاج"></div>
