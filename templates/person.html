@@ -137,71 +137,99 @@
 </section>
 
 <script>
-  document.getElementById('panicBtn')?.addEventListener('click', () => {
-    const supportNumber = "966555000000"; // غيّريه لرقم الطوارئ الحقيقي
+  (function(){
+    const SUPPORT_NUMBER = "966555000000"; // ← عدّلي رقم الدعم (دولي، بدون + أو 0)
   
-    const name = "{{ rec.get('Full Name', '—') }}";
-    const nusuk = "{{ rec.get('Nusuk ID', '—') }}";
-    const age = "{{ rec.get('Age', '—') }}";
-    const nationality = "{{ rec.get('Nationality', '—') }}";
-    const phone = "{{ rec.get('Phone', '—') }}";
-    const blood = "{{ rec.get('Blood Type', '—') }}";
-    const chronic = `{{ rec.get('Chronic Conditions', '—') }}`.replace(/\n/g, ', ');
-    const allergy = `{{ rec.get('Allergies', '—') }}`.replace(/\n/g, ', ');
-    const meds = `{{ rec.get('Current Meds', '—') }}`.replace(/\n/g, ', ');
+    function buildMessage(opts){
+      const {withLocation, lat, lon} = opts || {};
+      const name  = "{{ rec.get('Full Name', '—') }}";
+      const nusuk = "{{ rec.get('Nusuk ID', '—') }}";
+      const age   = "{{ rec.get('Age', '—') }}";
+      const nat   = "{{ rec.get('Nationality', '—') }}";
+      const phone = "{{ rec.get('Phone', '—') }}";
+      const blood = "{{ rec.get('Blood Type', '—') }}";
+      const chronic = `{{ rec.get('Chronic Conditions', '—') }}`.replace(/\n/g, ', ');
+      const meds    = `{{ rec.get('Current Meds', '—') }}`.replace(/\n/g, ', ');
+      const allergy = `{{ rec.get('Allergies', '—') }}`.replace(/\n/g, ', ');
   
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude.toFixed(6);
-          const lon = position.coords.longitude.toFixed(6);
-          const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-  
-          const message =
-            `🚨 *طلب مساعدة عاجل لحاج*\n\n` +
-            `👤 الاسم: ${name}\n` +
-            `🪪 رقم نسك: ${nusuk}\n` +
-            `📱 رقم الجوال: ${phone}\n` +
-            `🌍 الجنسية: ${nationality}\n` +
-            `🧍‍♂️ العمر: ${age}\n` +
-            (blood && blood !== "—" ? `🩸 فصيلة الدم: ${blood}\n` : "") +
-            `\n⚕️ *الأمراض المزمنة:* ${chronic}\n` +
-            `💊 *الأدوية الحالية:* ${meds}\n` +
-            `🌿 *الحساسية:* ${allergy}\n\n` +
-            `📍 *موقع الحاج:* ${mapsLink}\n\n` +
-            `🔴 الرجاء التعامل مع الحالة فورًا.`;
-  
-          const waURL = `https://wa.me/${supportNumber}?text=${encodeURIComponent(message)}`;
-          window.open(waURL, "_blank");
-        },
-        (error) => {
-          alert("لم نتمكن من تحديد موقعك. تأكد من تفعيل الموقع وحاول مجددًا.");
-          sendWithoutLocation();
-        }
-      );
-    } else {
-      alert("جهازك لا يدعم تحديد الموقع الجغرافي.");
-      sendWithoutLocation();
-    }
-  
-    function sendWithoutLocation() {
-      const message =
-        `🚨 *طلب مساعدة عاجل لحاج (بدون موقع)*\n\n` +
+      let msg =
+        `🚨 *طلب مساعدة عاجل لحاج*\n\n` +
         `👤 الاسم: ${name}\n` +
         `🪪 رقم نسك: ${nusuk}\n` +
         `📱 رقم الجوال: ${phone}\n` +
-        `🌍 الجنسية: ${nationality}\n` +
+        `🌍 الجنسية: ${nat}\n` +
         `🧍‍♂️ العمر: ${age}\n` +
         (blood && blood !== "—" ? `🩸 فصيلة الدم: ${blood}\n` : "") +
         `\n⚕️ *الأمراض المزمنة:* ${chronic}\n` +
         `💊 *الأدوية الحالية:* ${meds}\n` +
-        `🌿 *الحساسية:* ${allergy}\n\n` +
-        `⚠️ لم يتم إرسال الموقع.`
+        `🌿 *الحساسية:* ${allergy}\n`;
   
-      const waURL = `https://wa.me/${supportNumber}?text=${encodeURIComponent(message)}`;
-      window.open(waURL, "_blank");
+      if (withLocation && lat && lon){
+        const maps = `https://www.google.com/maps?q=${lat},${lon}`;
+        msg += `\n📍 *موقع الحاج:* ${maps}\n`;
+      } else {
+        msg += `\n⚠️ لم يتم إرفاق الموقع.\n`;
+      }
+      msg += `\n🔴 الرجاء التعامل مع الحالة فورًا.`;
+      return msg;
     }
-  });
+  
+    function openWhatsApp(message, targetWin){
+      const encoded = encodeURIComponent(message);
+      const urlApp  = `whatsapp://send?phone=${SUPPORT_NUMBER}&text=${encoded}`;
+      const urlWeb  = `https://wa.me/${SUPPORT_NUMBER}?text=${encoded}`;
+  
+      // جرّب تطبيق واتساب أولاً (iOS/Android)
+      try {
+        if (targetWin){
+          targetWin.location.href = urlApp;
+        } else {
+          window.location.href = urlApp;
+        }
+      } catch(e){/* ignore */}
+      // فallback سريع إلى wa.me بعد 900ms
+      setTimeout(() => {
+        try {
+          if (targetWin){
+            targetWin.location.href = urlWeb;
+          } else {
+            window.location.href = urlWeb;
+          }
+        } catch(e){/* ignore */}
+      }, 900);
+    }
+  
+    document.getElementById('panicBtn')?.addEventListener('click', () => {
+      // افتح تبويب فاضي فورًا (مطلوب لآيفون عشان يعتبره gesture)
+      const popup = window.open('about:blank', '_blank');
+  
+      // وظيفة إرسال بدون موقع (لو رفض الإذن أو فشل)
+      const sendNoLoc = () => {
+        const msg = buildMessage({withLocation:false});
+        openWhatsApp(msg, popup || null);
+      };
+  
+      // اطلب الموقع
+      if (navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lon = pos.coords.longitude.toFixed(6);
+            const msg = buildMessage({withLocation:true, lat, lon});
+            openWhatsApp(msg, popup || null);
+          },
+          err => {
+            // رفض/فشل
+            sendNoLoc();
+          },
+          { enableHighAccuracy:true, timeout:7000, maximumAge:0 }
+        );
+      } else {
+        // جهاز ما يدعم تحديد الموقع
+        sendNoLoc();
+      }
+    });
+  })();
   </script>
 
 <style>
