@@ -1,57 +1,224 @@
 {% extends 'base.html' %}
 {% block title %}البيانات الطبية الأساسية{% endblock %}
 {% block content %}
+
 <section class="hero with-image" style="background-image:url('{{ url_for('static', filename='bg22.jpeg') }}');">
   <div class="hero-center">
     <div>
       <h1 class="hero-title">البيانات الطبية الأساسية</h1>
-      <p class="hero-sub">عبّئ الحقول بدقة. يتم الحفظ داخليًا، ويُنشأ رمز QR مربوط برقم نسك.</p>
+      <p class="hero-sub">عبّئ الحقول بدقة. يتم الحفظ داخليًا، ويُنشأ رمز QR مربوط برقم نسك (يتم التحديث إذا تكرر رقم نسك).</p>
     </div>
   </div>
 </section>
 
 <section class="card glass">
   <form action="{{ url_for('submit') }}" method="post" class="form-grid">
-    <div class="field"><label>الاسم <span class="req">*</span></label>
-      <input name="full_name" required placeholder="محمد علي الحاج"></div>
-    <div class="field"><label>العمر <span class="req">*</span></label>
-      <input name="age" type="number" min="0" required placeholder="62"></div>
-    <div class="field"><label>الجنسية <span class="req">*</span></label>
-      <input name="nationality" required placeholder="مصر"></div>
-    <div class="field"><label>رقم نسك <span class="req">*</span></label>
-      <input name="nusuk_id" required placeholder="123456"></div>
 
-    <div class="field"><label>رقم الهوية/الإقامة</label>
-      <input name="national_id" placeholder="مثال: 2XXXXXXXXX"></div>
-    <div class="field"><label>رقم الجوال</label>
-      <input name="phone" placeholder="05xxxxxxxx"></div>
-    <div class="field"><label>رقم جوال الطوارئ</label>
-      <input name="phone_emg" placeholder="05xxxxxxxx"></div>
+    <!-- معلومات أساسية -->
+    <div class="field">
+      <label>الاسم <span class="req">*</span></label>
+      <input name="full_name" required placeholder="محمد علي الحاج">
+    </div>
 
-    <div class="field full"><label>الأمراض المزمنة</label>
-      <textarea name="chronic" rows="3" placeholder="سكري (Type II) — منذ 10 سنوات\nضغط دم عالي — تحت دواء"></textarea></div>
-    <div class="field full"><label>الأدوية الحالية</label>
-      <textarea name="meds" rows="3" placeholder="ميتفورمين 500mg — مرتين يومياً\nأملوديبين 5mg — يومياً"></textarea></div>
-    <div class="field full"><label>حساسية</label>
-      <textarea name="allergies" rows="2" placeholder="بنسيلين — طفح جلدي (متوسطة)"></textarea></div>
-    <div class="field full"><label>تطعيمات</label>
-      <textarea name="vacc" rows="2" placeholder="كوفيد (3 جرعات) — آخر جرعة: 2024-10-01"></textarea></div>
+    <div class="field">
+      <label>العمر <span class="req">*</span></label>
+      <input name="age" type="number" min="0" required placeholder="62">
+    </div>
 
-    <div class="field"><label>درجة الحرارة (°C)</label>
-      <input name="temp_c" type="number" step="0.1" placeholder="36.7"></div>
-    <div class="field"><label>الضغط الانقباضي</label>
-      <input name="bp_sys" type="number" placeholder="140"></div>
-    <div class="field"><label>الضغط الانبساطي</label>
-      <input name="bp_dia" type="number" placeholder="85"></div>
-    <div class="field"><label>سكر عشوائي (mg/dL)</label>
-      <input name="rand_glu" type="number" placeholder="160"></div>
+    <div class="field">
+      <label>الجنسية <span class="req">*</span></label>
+      <input name="nationality" list="nationalities" required placeholder="اختر الجنسية">
+      <datalist id="nationalities">
+        <!-- قائمة جنسيات عربية (يمكن الإضافة/التعديل) -->
+        <option value="السعودية">
+        <option value="مصر">
+        <option value="اليمن">
+        <option value="سوريا">
+        <option value="الأردن">
+        <option value="فلسطين">
+        <option value="لبنان">
+        <option value="العراق">
+        <option value="المغرب">
+        <option value="الجزائر">
+        <option value="تونس">
+        <option value="ليبيا">
+        <option value="السودان">
+        <option value="الإمارات">
+        <option value="الكويت">
+        <option value="قطر">
+        <option value="البحرين">
+        <option value="عُمان">
+        <option value="تركيا">
+        <option value="باكستان">
+        <option value="الهند">
+        <option value="إندونيسيا">
+        <option value="ماليزيا">
+        <option value="بنغلاديش">
+        <option value="الفلبين">
+        <option value="الصين">
+        <option value="كوريا الجنوبية">
+        <option value="اليابان">
+        <option value="إثيوبيا">
+        <option value="إريتريا">
+        <option value="نيجيريا">
+        <option value="جنوب أفريقيا">
+        <option value="الولايات المتحدة">
+        <option value="المملكة المتحدة">
+        <option value="فرنسا">
+        <option value="ألمانيا">
+        <option value="إيطاليا">
+        <option value="إسبانيا">
+        <option value="كندا">
+        <option value="أستراليا">
+        <option value="البرازيل">
+        <option value="الأرجنتين">
+        <option value="روسيا">
+        <option value="أوكرانيا">
+        <option value="أفغانستان">
+        <option value="سريلانكا">
+        <option value="نيبال">
+        <option value="تشاد">
+        <option value="الصومال">
+        <option value="موريتانيا">
+        <option value="جيبوتي">
+        <option value="بوركينا فاسو">
+        <option value="مالي">
+        <option value="النيجر">
+        <option value="توغو">
+        <option value="غامبيا">
+        <option value="السنغال">
+        <option value="ساحل العاج">
+        <option value="غانا">
+        <option value="الكاميرون">
+        <option value="الكونغو">
+        <option value="كينيا">
+        <option value="تنزانيا">
+        <option value="أوغندا">
+        <option value="بولندا">
+        <option value="هولندا">
+        <option value="السويد">
+        <option value="النرويج">
+        <option value="سويسرا">
+        <option value="النمسا">
+        <option value="البرتغال">
+        <option value="اليونان">
+        <option value="رومانيا">
+        <option value="بلغاريا">
+        <option value="المجر">
+        <option value="التشيك">
+        <option value="سلوفاكيا">
+        <option value="أيرلندا">
+        <option value="بلجيكا">
+        <option value="ليتوانيا">
+        <option value="لاتفيا">
+        <option value="إستونيا">
+        <option value="أيسلندا">
+        <option value="نيوزيلندا">
+        <!-- ... تقدري تضيفي باقي الدول لو حبيتي -->
+      </datalist>
+    </div>
 
-    <div class="field full"><label>ملاحظات طبية</label>
-      <textarea name="notes" rows="3" placeholder="يحتاج متابعة غذائية وتنظيم دواء الصيام\nحالة متوسطة، لا حاجة لإسعاف فوري"></textarea></div>
+    <div class="field">
+      <label>رقم نسك <span class="req">*</span></label>
+      <input name="nusuk_id" required placeholder="123456">
+    </div>
+
+    <div class="field">
+      <label>رقم الجوال <span class="req">*</span></label>
+      <input name="phone" required placeholder="05xxxxxxxx">
+    </div>
+
+    <!-- الأمراض المزمنة (متعددة) -->
+    <div class="field full">
+      <label>الأمراض المزمنة (اختر ما ينطبق)</label>
+      <div class="multi-list">
+        <!-- نفس الاسم chronic ليتم تجميعها في باك إند -->
+        <label><input type="checkbox" name="chronic" value="سكري (Type II)"> سكري (Type II)</label>
+        <label><input type="checkbox" name="chronic" value="سكري (Type I)"> سكري (Type I)</label>
+        <label><input type="checkbox" name="chronic" value="ضغط دم عالي"> ضغط دم عالي</label>
+        <label><input type="checkbox" name="chronic" value="أمراض قلبية"> أمراض قلبية</label>
+        <label><input type="checkbox" name="chronic" value="ربو"> ربو</label>
+        <label><input type="checkbox" name="chronic" value="أمراض كلوية"> أمراض كلوية</label>
+        <label><input type="checkbox" name="chronic" value="أمراض كبدية"> أمراض كبدية</label>
+        <label><input type="checkbox" name="chronic" value="سرطان (تحت علاج/متابعة)"> سرطان (تحت علاج/متابعة)</label>
+        <label><input type="checkbox" name="chronic" value="اضطراب الغدة الدرقية"> اضطراب الغدة الدرقية</label>
+        <label><input type="checkbox" name="chronic" value="السمنة"> السمنة</label>
+        <label><input type="checkbox" name="chronic" value="أخرى" id="chronic_other_chk"> أخرى</label>
+      </div>
+      <input id="chronic_other_text" name="chronic_other" class="mt8" placeholder="اذكر المرض المزمن الآخر" style="display:none">
+    </div>
+
+    <!-- الأدوية الحالية -->
+    <div class="field full">
+      <label>الأدوية الحالية</label>
+      <textarea name="meds" rows="3" placeholder="ميتفورمين 500mg — مرتين يومياً&#10;أملوديبين 5mg — يومياً"></textarea>
+    </div>
+
+    <!-- الحساسيّات (متعددة) -->
+    <div class="field full">
+      <label>الحساسيّات (اختياري)</label>
+      <div class="multi-list">
+        <label><input type="checkbox" name="allergies" value="بنسيلين"> بنسيلين</label>
+        <label><input type="checkbox" name="allergies" value="سيفالوسبورين"> سيفالوسبورين</label>
+        <label><input type="checkbox" name="allergies" value="أموكسيسيلين"> أموكسيسيلين</label>
+        <label><input type="checkbox" name="allergies" value="الأسبرين/NSAIDs"> الأسبرين/NSAIDs</label>
+        <label><input type="checkbox" name="allergies" value="اللاكتوز"> اللاكتوز</label>
+        <label><input type="checkbox" name="allergies" value="الفول السوداني/المكسّرات"> الفول السوداني/المكسّرات</label>
+        <label><input type="checkbox" name="allergies" value="الجلوتين (قمح)"> الجلوتين (قمح)</label>
+        <label><input type="checkbox" name="allergies" value="غبار/حبوب لقاح"> غبار/حبوب لقاح</label>
+        <label><input type="checkbox" name="allergies" value="أخرى" id="allergies_other_chk"> أخرى</label>
+      </div>
+      <input id="allergies_other_text" name="allergies_other" class="mt8" placeholder="اذكر الحساسية الأخرى" style="display:none">
+    </div>
+
+    <!-- التطعيمات -->
+    <div class="field full">
+      <label>التطعيمات</label>
+      <textarea name="vacc" rows="2" placeholder="كوفيد (3 جرعات) — آخر جرعة: 2024-10-01"></textarea>
+    </div>
 
     <div class="actions">
       <button class="btn" type="submit">إرسال وإنشاء/تحديث QR</button>
     </div>
   </form>
 </section>
+
+<!-- سكرِبت إظهار/إخفاء “أخرى” -->
+<script>
+const chOtherChk  = document.getElementById('chronic_other_chk');
+const chOtherText = document.getElementById('chronic_other_text');
+if (chOtherChk) {
+  chOtherChk.addEventListener('change', e => {
+    chOtherText.style.display = e.target.checked ? 'block' : 'none';
+    if (!e.target.checked) chOtherText.value = '';
+  });
+}
+
+const alOtherChk  = document.getElementById('allergies_other_chk');
+const alOtherText = document.getElementById('allergies_other_text');
+if (alOtherChk) {
+  alOtherChk.addEventListener('change', e => {
+    alOtherText.style.display = e.target.checked ? 'block' : 'none';
+    if (!e.target.checked) alOtherText.value = '';
+  });
+}
+</script>
+
+<style>
+/* تحسين شكل قوائم الاختيار المتعددة */
+.multi-list{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:8px 16px;
+}
+.multi-list label{
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; border:1px solid var(--border); border-radius:12px; background:#fff;
+}
+.mt8{ margin-top:8px }
+@media (max-width: 720px){
+  .multi-list{ grid-template-columns:1fr; }
+}
+</style>
+
 {% endblock %}

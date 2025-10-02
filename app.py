@@ -73,70 +73,70 @@ def index():
 @app.route("/submit", methods=["POST"])
 def submit():
     from uuid import uuid4
-    import json, re, qrcode
+    from datetime import datetime
+    import json, os, re, qrcode
 
     # --- Basic fields ---
     full_name   = request.form.get("full_name", "").strip()
     age         = request.form.get("age", "").strip()
     nationality = request.form.get("nationality", "").strip()
     nusuk_id    = request.form.get("nusuk_id", "").strip()
-
-    national_id = request.form.get("national_id", "").strip()
     phone       = request.form.get("phone", "").strip()
-    phone_emg   = request.form.get("phone_emg", "").strip()
 
-    # --- Clinical text blocks ---
-    chronic   = request.form.get("chronic", "").strip()
-    meds      = request.form.get("meds", "").strip()
-    allergies = request.form.get("allergies", "").strip()
-    vacc      = request.form.get("vacc", "").strip()
+    # --- Chronic diseases (multiple) ---
+    chronic_list = request.form.getlist("chronic")
+    chronic_other = request.form.get("chronic_other", "").strip()
+    if chronic_other:
+        chronic_list.append(f"أخرى: {chronic_other}")
+    chronic = "، ".join([c for c in chronic_list if c])
 
-    # --- Vitals ---
-    temp_c   = request.form.get("temp_c", "").strip()
-    bp_sys   = request.form.get("bp_sys", "").strip()
-    bp_dia   = request.form.get("bp_dia", "").strip()
-    rand_glu = request.form.get("rand_glu", "").strip()
+    # --- Current medications (free text) ---
+    meds = request.form.get("meds", "").strip()
 
-    notes = request.form.get("notes", "").strip()
+    # --- Allergies (multiple) ---
+    allergies_list = request.form.getlist("allergies")
+    allergies_other = request.form.get("allergies_other", "").strip()
+    if allergies_other:
+        allergies_list.append(f"أخرى: {allergies_other}")
+    allergies = "، ".join([a for a in allergies_list if a])
 
-    # Required
-    if not full_name or not age or not nationality or not nusuk_id:
-        flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك")
+    # --- Vaccinations (free text) ---
+    vacc = request.form.get("vacc", "").strip()
+
+    # Required fields validation
+    if not full_name or not age or not nationality or not nusuk_id or not phone:
+        flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك ورقم الجوال")
         return redirect(url_for("index"))
 
     try:
-        # 1) Build record and upsert to Excel
-        rid = re.sub(r"[^0-9]+", "", nusuk_id) or nusuk_id
+        # 1) Prepare record
         record = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Full Name": full_name,
             "Age": age,
             "Nationality": nationality,
             "Nusuk ID": nusuk_id,
-            "National ID / Iqama": national_id,
             "Phone": phone,
-            "Emergency Phone": phone_emg,
             "Chronic Conditions": chronic,
             "Current Meds": meds,
             "Allergies": allergies,
             "Vaccinations": vacc,
-            "Temp (C)": temp_c,
-            "BP Systolic": bp_sys,
-            "BP Diastolic": bp_dia,
-            "Random Glucose (mg/dL)": rand_glu,
-            "Medical Notes": notes,
-            "Record ID": rid,
         }
+
+        # 2) Upsert to Excel by Nusuk ID
         append_to_excel(record, EXCEL_PATH)
 
-        # 2) Save JSON snapshot keyed by Nusuk ID
+        # 3) Use Nusuk ID as record id
+        rid = re.sub(r"[^0-9]+", "", nusuk_id) or nusuk_id
+        record["Record ID"] = rid
+
+        # 4) Save JSON snapshot
         REC_DIR = DATA_DIR / "records"
         REC_DIR.mkdir(exist_ok=True)
         with open(REC_DIR / f"{rid}.json", "w", encoding="utf-8") as f:
-            import json
             json.dump(record, f, ensure_ascii=False, indent=2)
 
-        # 3) Build public URL & QR (uses BASE_URL if set)
+        # 5) Build public URL & QR
         base = os.environ.get("BASE_URL", request.host_url.rstrip("/"))
         person_url = f"{base}/p/{rid}"
 
@@ -146,22 +146,24 @@ def submit():
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_M,
             box_size=10,
-            border=4,
+            border=4
         )
         qr.add_data(person_url)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
-        safe_name = re.sub(r"[^\w\-]+", "_", full_name)[:32]
-        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe_name}.png"
+
+        qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\w\-]+','_', full_name)[:32]}.png"
         img.save(qr_dir / qr_name)
 
         print("QR URL =>", person_url)
-        return render_template( "success.html",
-    qr_url=url_for("qr_file", fname=qr_name),
-    person_url=person_url,
-    full_name=full_name,
-    nusuk_id=nusuk_id,
-    phone=phone)
+        return render_template(
+            "success.html",
+            qr_url=url_for("qr_file", fname=qr_name),
+            person_url=person_url,
+            full_name=full_name,
+            nusuk_id=nusuk_id,
+            phone=phone
+        )
     except Exception as e:
         flash(f"حدث خطأ أثناء الحفظ: {e}")
         return redirect(url_for("index"))

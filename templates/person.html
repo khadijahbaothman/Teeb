@@ -1,89 +1,89 @@
 {% extends 'base.html' %}
 {% block title %}بيانات الشخص{% endblock %}
 {% block content %}
+<section class="card person-card glass">
 
-<section class="hero-card" style="margin:20px 0;">
-  <h1 style="margin:0 0 6px 0;">بطاقة بيانات الشخص</h1>
-  <p class="muted" style="margin:0">ملخّص طبي مختصر للاستخدام الداخلي.</p>
-</section>
-
-<section class="card">
-  <!-- رأس البطاقة -->
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-    <div>
-      <div style="font-size:22px;font-weight:800">{{ rec["Full Name"] }}</div>
-      <div class="muted" style="margin-top:4px">
-        {{ rec.get("Nationality","-") }} • عمر: {{ rec.get("Age","-") }}
+  <!-- هيدر منسّق -->
+  <div class="person-header">
+    <div class="person-main">
+      <div class="person-name">{{ rec.get("Full Name","—") }}</div>
+      <div class="person-sub">
+        {{ rec.get("Age","—") }}• {{ rec.get("Nationality","—") }}
+      </div>
+      <div class="person-phone">
+        {{ rec.get("Phone","—") }}
       </div>
     </div>
+
     {% if rec.get("Nusuk ID") %}
-      <div style="background:var(--pill); border:1px solid var(--brand); color:var(--brand); padding:8px 12px; border-radius:12px; font-weight:700">
-        رقم نسك: {{ rec["Nusuk ID"] }}
-      </div>
+    <div class="id-badge">
+      <span>رقم نسك:</span>
+      <strong>{{ rec["Nusuk ID"] }}</strong>
+    </div>
     {% endif %}
   </div>
 
-  <!-- شبكة الحقول الأساسية -->
-  <div class="form-grid" style="row-gap:12px">
-    <div class="field">
-      <label>الحرارة (°C)</label>
-      <div>{{ rec.get("Temp (C)","-") }}</div>
-    </div>
-    <div class="field">
-      <label>ضغط الدم</label>
-      <div>
-        {% set s = rec.get("BP Systolic","-") %}
-        {% set d = rec.get("BP Diastolic","-") %}
-        {{ s }}/{{ d }} mmHg
-      </div>
-    </div>
-    <div class="field">
-      <label>سكر عشوائي</label>
-      <div>{{ rec.get("Random Glucose (mg/dL)","-") }} mg/dL</div>
-    </div>
-    <div class="field">
-      <label>آخر تحديث</label>
-      <div>{{ rec.get("Timestamp","-") }}</div>
-    </div>
 
-    <div class="field full">
-      <label>الأمراض المزمنة</label>
-      <div style="white-space:pre-wrap">{{ rec.get("Chronic Conditions","-") }}</div>
-    </div>
-    <div class="field full">
-      <label>الأدوية الحالية</label>
-      <div style="white-space:pre-wrap">{{ rec.get("Current Meds","-") }}</div>
-    </div>
-    <div class="field full">
-      <label>الحساسية</label>
-      <div style="white-space:pre-wrap">{{ rec.get("Allergies","-") }}</div>
-    </div>
-    <div class="field full">
-      <label>التطعيمات</label>
-      <div style="white-space:pre-wrap">{{ rec.get("Vaccinations","-") }}</div>
-    </div>
-    <div class="field full">
-      <label>ملاحظات طبية</label>
-      <div style="white-space:pre-wrap">{{ rec.get("Medical Notes","-") }}</div>
+  <!-- الأمراض المزمنة -->
+  <div class="info-section">
+    <h3>🩺 الأمراض المزمنة</h3>
+    <div class="tag-list">
+      {% set chronic_str = rec.get("Chronic Conditions","") %}
+      {% for raw in chronic_str.split("،") if raw.strip() %}
+        {% set item = raw.strip() %}
+        {% if item.startswith("أخرى") %}
+          {% set parts = item.split(":", 1) %}
+          {% set val = parts[1].strip() if parts|length > 1 else "أخرى" %}
+          <span class="tag">{{ val }}</span>
+        {% else %}
+          <span class="tag">{{ item }}</span>
+        {% endif %}
+      {% endfor %}
+      {% if not chronic_str.strip() %}<span class="tag tag-empty">لا يوجد</span>{% endif %}
     </div>
   </div>
 
+  <!-- الحساسيّات -->
+  <div class="info-section">
+    <h3>🌿 الحساسيّات</h3>
+    <div class="tag-list">
+      {% set allergies_str = rec.get("Allergies","") %}
+      {% for raw in allergies_str.split("،") if raw.strip() %}
+        {% set item = raw.strip() %}
+        {% if item.startswith("أخرى") %}
+          {% set parts = item.split(":", 1) %}
+          {% set val = parts[1].strip() if parts|length > 1 else "أخرى" %}
+          <span class="tag">{{ val }}</span>
+        {% else %}
+          <span class="tag">{{ item }}</span>
+        {% endif %}
+      {% endfor %}
+      {% if not allergies_str.strip() %}<span class="tag tag-empty">لا يوجد</span>{% endif %}
+    </div>
+  </div>
+
+  <!-- الأدوية / التطعيمات -->
+  <div class="info-section">
+    <h3>💊 الأدوية الحالية</h3>
+    <p class="plain">{{ rec.get("Current Meds","—") or "—" }}</p>
+  </div>
+
+  <div class="info-section">
+    <h3>💉 التطعيمات</h3>
+    <p class="plain">{{ rec.get("Vaccinations","—") or "—" }}</p>
+  </div>
   <!-- أزرار الإجراءات -->
-  <div class="actions" style="margin-top:16px">
-    <a class="btn btn-ghost" href="{{ url_for('index') }}">عودة للنموذج</a>
-    <button class="btn-outline" type="button" onclick="window.print()">طباعة</button>
-    <button class="btn" type="button" onclick="copyLink(this)">نسخ الرابط</button>
+  <div class="person-actions">
+    <button type="button" class="btn btn-print" onclick="window.print()">🖨️ طباعة الصفحة</button>
+    <button type="button" class="btn-danger" id="panicBtn">🚨 طوارئ</button>
   </div>
 </section>
 
-<script>
-function copyLink(btn){
-  const url = window.location.href;
-  navigator.clipboard.writeText(url).then(()=>{
-    btn.textContent = 'تم النسخ ✓';
-    setTimeout(()=>btn.textContent='نسخ الرابط', 1500);
-  });
-}
-</script>
 
+<script>
+  // حالياً زر الطوارئ بدون فعل — بنربطه لاحقاً
+  document.getElementById('panicBtn')?.addEventListener('click', () => {
+    alert('زر الطوارئ جاهز – قولي لي وش تبين يسوي بالضبط (اتصال/فتح شاشة/إرسال تنبيه).');
+  });
+</script>
 {% endblock %}
