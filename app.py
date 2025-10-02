@@ -7,6 +7,14 @@ import os
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")
 
+COUNTRY_CODE = {
+    "السعودية": "sa", "مصر": "eg", "باكستان": "pk", "الهند": "in", "بنغلاديش": "bd",
+    "إندونيسيا": "id", "الفلبين": "ph", "نيجيريا": "ng", "اليمن": "ye", "الأردن": "jo",
+    "سوريا": "sy", "فلسطين": "ps", "لبنان": "lb", "السودان": "sd", "المغرب": "ma",
+    "الجزائر": "dz", "تونس": "tn", "تركيا": "tr",  # زوّدي اللي تحتاجيه
+}
+
+
 # Disable caching in dev so CSS refreshes
 @app.after_request
 def add_no_cache_headers(resp):
@@ -82,6 +90,7 @@ def submit():
     nationality = request.form.get("nationality", "").strip()
     nusuk_id    = request.form.get("nusuk_id", "").strip()
     phone       = request.form.get("phone", "").strip()
+    blood_type = request.form.get("blood_type", "").strip()
 
     # --- Chronic diseases (multiple) ---
     chronic_list = request.form.getlist("chronic")
@@ -117,6 +126,7 @@ def submit():
             "Nationality": nationality,
             "Nusuk ID": nusuk_id,
             "Phone": phone,
+            "Blood Type": blood_type,
             "Chronic Conditions": chronic,
             "Current Meds": meds,
             "Allergies": allergies,
@@ -179,10 +189,15 @@ def person_view(rid):
     import json
     rec_path = DATA_DIR / "records" / f"{rid}.json"
     if not rec_path.exists():
-        return "Record not found", 404
+        flash("لم يتم العثور على السجل"); return redirect(url_for("index"))
+
     with open(rec_path, "r", encoding="utf-8") as f:
         rec = json.load(f)
-    return render_template("person.html", rec=rec)
+
+    nat = (rec.get("Nationality") or "").strip()
+    code = COUNTRY_CODE.get(nat)
+    flag_url = f"https://flagcdn.com/w80/{code}.png" if code else None
+    return render_template("person.html", rec=rec, flag_url=flag_url)
 
 
 if __name__ == "__main__":
