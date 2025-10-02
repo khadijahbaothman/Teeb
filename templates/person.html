@@ -127,7 +127,9 @@
 
     <!-- أزرار أسفل -->
     <div class="sheet-actions">
-      <button class="btn btn-danger" id="panicBtn">طلب المساعدة / الدعم</button>
+      <button class="btn btn-danger" id="panicBtn" type="button">
+        طلب المساعدة / الدعم
+      </button>
       <button class="btn btn-dark" onclick="window.print()">طباعة</button>
     </div>
 
@@ -135,10 +137,72 @@
 </section>
 
 <script>
-document.getElementById('panicBtn')?.addEventListener('click', () => {
-  alert('زر الطوارئ جاهز — قولي لي الإجراء المطلوب (اتصال/واتساب/إرسال إشعار) وأركّبه.');
-});
-</script>
+  document.getElementById('panicBtn')?.addEventListener('click', () => {
+    const supportNumber = "966555000000"; // غيّريه لرقم الطوارئ الحقيقي
+  
+    const name = "{{ rec.get('Full Name', '—') }}";
+    const nusuk = "{{ rec.get('Nusuk ID', '—') }}";
+    const age = "{{ rec.get('Age', '—') }}";
+    const nationality = "{{ rec.get('Nationality', '—') }}";
+    const phone = "{{ rec.get('Phone', '—') }}";
+    const blood = "{{ rec.get('Blood Type', '—') }}";
+    const chronic = `{{ rec.get('Chronic Conditions', '—') }}`.replace(/\n/g, ', ');
+    const allergy = `{{ rec.get('Allergies', '—') }}`.replace(/\n/g, ', ');
+    const meds = `{{ rec.get('Current Meds', '—') }}`.replace(/\n/g, ', ');
+  
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toFixed(6);
+          const lon = position.coords.longitude.toFixed(6);
+          const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+  
+          const message =
+            `🚨 *طلب مساعدة عاجل لحاج*\n\n` +
+            `👤 الاسم: ${name}\n` +
+            `🪪 رقم نسك: ${nusuk}\n` +
+            `📱 رقم الجوال: ${phone}\n` +
+            `🌍 الجنسية: ${nationality}\n` +
+            `🧍‍♂️ العمر: ${age}\n` +
+            (blood && blood !== "—" ? `🩸 فصيلة الدم: ${blood}\n` : "") +
+            `\n⚕️ *الأمراض المزمنة:* ${chronic}\n` +
+            `💊 *الأدوية الحالية:* ${meds}\n` +
+            `🌿 *الحساسية:* ${allergy}\n\n` +
+            `📍 *موقع الحاج:* ${mapsLink}\n\n` +
+            `🔴 الرجاء التعامل مع الحالة فورًا.`;
+  
+          const waURL = `https://wa.me/${supportNumber}?text=${encodeURIComponent(message)}`;
+          window.open(waURL, "_blank");
+        },
+        (error) => {
+          alert("لم نتمكن من تحديد موقعك. تأكد من تفعيل الموقع وحاول مجددًا.");
+          sendWithoutLocation();
+        }
+      );
+    } else {
+      alert("جهازك لا يدعم تحديد الموقع الجغرافي.");
+      sendWithoutLocation();
+    }
+  
+    function sendWithoutLocation() {
+      const message =
+        `🚨 *طلب مساعدة عاجل لحاج (بدون موقع)*\n\n` +
+        `👤 الاسم: ${name}\n` +
+        `🪪 رقم نسك: ${nusuk}\n` +
+        `📱 رقم الجوال: ${phone}\n` +
+        `🌍 الجنسية: ${nationality}\n` +
+        `🧍‍♂️ العمر: ${age}\n` +
+        (blood && blood !== "—" ? `🩸 فصيلة الدم: ${blood}\n` : "") +
+        `\n⚕️ *الأمراض المزمنة:* ${chronic}\n` +
+        `💊 *الأدوية الحالية:* ${meds}\n` +
+        `🌿 *الحساسية:* ${allergy}\n\n` +
+        `⚠️ لم يتم إرسال الموقع.`
+  
+      const waURL = `https://wa.me/${supportNumber}?text=${encodeURIComponent(message)}`;
+      window.open(waURL, "_blank");
+    }
+  });
+  </script>
 
 <style>
 /* ===== PERSON PAGE LAYOUT (inline for convenience) ===== */
