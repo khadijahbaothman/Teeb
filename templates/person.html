@@ -59,12 +59,9 @@
               {% set val = parts[1].strip() if parts|length > 1 else "أخرى" %}
               <span class="tag">{{ val }}</span>
             {% else %}
-              <span class="tag"></span>
+              <span class="tag">{{ item }}</span>
             {% endif %}
           {% endfor %}
-          {% if not any_tag %}
-            <span class="tag tag-empty">لا يوجد</span>
-          {% endif %}
         </div>
       </div>
 
@@ -85,9 +82,6 @@
               <span class="tag">{{ item }}</span>
             {% endif %}
           {% endfor %}
-          {% if not any_tag %}
-            <span class="tag tag-empty">لا يوجد</span>
-          {% endif %}
         </div>
       </div>
 
@@ -231,12 +225,37 @@
     });
   })();
   </script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const mainContent = document.querySelector(".person-wrap");
-      mainContent.style.display = "none";
-    
-      // إنشاء البوب أب
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1) أخفِ كل الأقسام التفصيلية مؤقتًا
+    const fullSections = document.querySelectorAll(".grid-two, .section:not(.basic-info), hr.soft-divider");
+    fullSections.forEach(sec => sec.style.display = "none");
+  
+    // 2) أنشئ “البيانات الأساسية” (اسم، رقم نسك، جنسية، عمر)
+    const nationality = "{{ rec.get('Nationality', '—') }}";
+    const name = "{{ rec.get('Full Name', '—') }}";
+    const nusuk = "{{ rec.get('Nusuk ID', '—') }}";
+    const age = "{{ rec.get('Age', '—') }}";
+  
+    const basicInfoSection = document.createElement("div");
+  
+    const actions = document.querySelector(".sheet-actions");
+    actions.parentNode.insertBefore(basicInfoSection, actions);
+  
+    // 3) أنشئ زر "طيب" قبل زر الطوارئ
+    const okBtn = document.createElement("button");
+    okBtn.className = "btn btn-ok";
+    okBtn.textContent = "طِيب";
+    okBtn.style.marginRight = "auto";
+  
+    const panicBtn = document.getElementById("panicBtn");
+    panicBtn.parentNode.insertBefore(okBtn, panicBtn);
+  
+    // 4) عند الضغط على "طيب" افتح البوب-أب للتحقق
+    okBtn.addEventListener("click", showPopup);
+  
+    // === دالة البوب-أب (لا تُستدعى إلا عند الضغط على طيب) ===
+    function showPopup() {
       const overlay = document.createElement("div");
       overlay.style.position = "fixed";
       overlay.style.top = 0;
@@ -248,7 +267,7 @@
       overlay.style.alignItems = "center";
       overlay.style.justifyContent = "center";
       overlay.style.zIndex = 9999;
-    
+  
       overlay.innerHTML = `
         <div style="
           background: #fff;
@@ -261,7 +280,7 @@
           font-family: 'Tajawal', sans-serif;
         ">
           <h2 style="margin-bottom: 14px; font-size: 20px;">التحقق من الصلاحية</h2>
-          <p style="margin-bottom: 16px; color:#444;">يرجى إدخال الرقم السري للوصول للصفحة</p>
+          <p style="margin-bottom: 16px; color:#444;">يرجى إدخال الرقم السري للوصول لكامل البيانات</p>
           <input type="password" id="idInput" placeholder="•••••" 
             style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 12px; text-align: center; font-size: 16px;">
           <div id="errorMsg" style="color: #ef4444; margin-top: 8px; display:none;">❌ الرقم غير صحيح</div>
@@ -272,24 +291,31 @@
         </div>
       `;
       document.body.appendChild(overlay);
-    
-      // الرقم السري المطلوب
+  
       const correctCode = "99999";
-    
-      document.getElementById("submitId").addEventListener("click", () => {
+  
+      // إدخال عبر زر التحقق أو Enter
+      const doCheck = () => {
         const input = document.getElementById("idInput").value.trim();
         const error = document.getElementById("errorMsg");
-    
         if (input === correctCode) {
-          overlay.remove();                // ✅ يخفي البوب أب
-          mainContent.style.display = "block"; // ✅ يعرض الصفحة
+          overlay.remove();                               // ✅ أخفِ البوب-أب
+          fullSections.forEach(sec => sec.style.display = "block"); // ✅ أظهر كل الأقسام
+          okBtn.remove();                                 // ✅ اخفِ زر "طيب"
         } else {
-          error.style.display = "block";   // ❌ يظهر الخطأ
+          error.style.display = "block";                  // ❌ خطأ
           setTimeout(() => { error.style.display = "none"; }, 2000);
         }
+      };
+  
+      document.getElementById("submitId").addEventListener("click", doCheck);
+      document.getElementById("idInput").addEventListener("keyup", (e) => {
+        if (e.key === "Enter") doCheck();
       });
-    });
-    </script>
+      document.getElementById("idInput").focus();
+    }
+  });
+  </script>
 
 <style>
   
@@ -299,6 +325,21 @@
 .center-badge{ display:flex; justify-content:center; margin-bottom:10px; }
 .center-badge img{ height:56px; width:auto; }
 
+
+.btn-ok{
+  background: #34B8EC;
+  color: #fff;
+  border: 1px solid #34B8EC;
+  box-shadow: 0 6px 16px rgba(52,184,236,.28);
+  border-radius: 16px;
+  padding: 10px 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.btn-ok:hover{
+  background: #1fa7df;        /* درجة أغمق بسيطة */
+  border-color: #1fa7df;
+}
 .person-sheet{
   position: relative;
   background:#fff; border:1px solid var(--border);
@@ -306,7 +347,22 @@
   box-shadow:0 18px 40px rgba(0,0,0,.08);
   z-index: 50;
 }
-
+.btn-success {
+  background: #22c55e;
+  color: #fff;
+  border: 1px solid #16a34a;
+  box-shadow: 0 6px 16px rgba(22,163,74,.25);
+}
+.btn-success:hover {
+  background: #16a34a;
+}
+.basic-info {
+  margin-bottom: 16px;
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+}
 /* header block */
 .header-row{
   display:grid; grid-template-columns: 140px 1fr 70px; gap:16px; align-items:center ;

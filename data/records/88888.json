@@ -1,13 +1,14 @@
 {
-  "Timestamp": "2025-10-02 14:20:58",
-  "Full Name": "خديجة",
+  "Timestamp": "2025-10-02 15:54:18",
+  "Full Name": "خديجة علي باعثمان",
   "Age": "24",
   "Nationality": "السعودية",
   "Nusuk ID": "88888",
   "Phone": "0554420060",
+  "Blood Type": "O+",
   "Chronic Conditions": "سكري (Type II)، ضغط دم عالي، ربو",
-  "Current Meds": "ميتفلين",
-  "Allergies": "بنسيلين، أموكسيسيلين، الفول السوداني/المكسّرات",
-  "Vaccinations": "كوفيد",
+  "Current Meds": "",
+  "Allergies": "سيفالوسبورين، الأسبرين/NSAIDs، اللاكتوز",
+  "Vaccinations": "",
   "Record ID": "88888"
 }
