@@ -303,6 +303,55 @@ textarea:focus {
   background: var(--pill)
 }
 
+/* ===== Mobile-first fixes for the INDEX form ===== */
+
+/* خليه Grid مرن */
+.form-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:16px;
+}
+
+/* خلي الأعمدة تشتغل صح وما تقصّ الكلام */
+.field{ display:flex; flex-direction:column; min-width:0; }
+.field.full{ grid-column:1 / -1; }
+
+/* inputs متوافقة مع الجوال */
+input, select, textarea{
+  width:100%;
+  padding:14px 14px;
+  border:1px solid var(--border, #e5e7eb);
+  border-radius:14px;
+  font-size:16px;                 /* يمنع تكبير iOS */
+  background:#fff;
+  box-sizing:border-box;
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+/* منع أزرار الـ number في بعض المتصفحات */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+input[type=number]{ -moz-appearance:textfield; }
+
+/* الأزرار */
+.actions{ grid-column:1 / -1; display:flex; gap:12px; }
+.actions .btn{ flex:1; }
+
+/* بطاقات أقل Padding على الجوال */
+@media (max-width: 640px){
+  .form-grid{ grid-template-columns: 1fr; gap:12px; }
+  .actions{ flex-direction:column; }
+  .actions .btn{ width:100%; }
+  .card.glass{ padding:16px; border-radius:18px; }
+}
+
+/* اتجاه عربي داخل الحقول */
+[dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea{ text-align:right; }
+
+/* ملف الصورة */
+input[type=file]{ padding:10px; font-size:16px; }
+
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border);

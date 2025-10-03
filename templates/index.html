@@ -23,7 +23,7 @@
 
     <div class="field">
       <label>العمر <span class="req">*</span></label>
-      <input name="age" type="number" min="0" required placeholder="62">
+      <input name="age" type="number" inputmode="numeric" min="0" required placeholder="62">
     </div>
 
     <div class="field">
@@ -121,12 +121,12 @@
 
     <div class="field">
       <label>رقم نسك <span class="req">*</span></label>
-      <input name="nusuk_id" required placeholder="123456">
+      <input name="nusuk_id" required inputmode="numeric" pattern="\d*" placeholder="123456">
     </div>
 
     <div class="field">
       <label>رقم الجوال <span class="req">*</span></label>
-      <input name="phone" required placeholder="05xxxxxxxx">
+      <input name="phone" required inputmode="tel" autocomplete="tel-national" placeholder="05xxxxxxxx">
     </div>
 
     <div class="field">
