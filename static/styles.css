@@ -337,6 +337,12 @@ textarea:focus {
   color: #ef4444
 }
 
+.checkbox-grid{
+  display:grid; gap:8px;
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+}
+.checkbox-grid label{ display:flex; gap:8px; align-items:center; }
+
 /* خلفية تغطي الصفحة كاملة */
 .full-bg {
   position: relative;

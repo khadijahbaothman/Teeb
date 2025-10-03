@@ -3,6 +3,10 @@ from datetime import datetime
 import pandas as pd
 from pathlib import Path
 import os
+from werkzeug.utils import secure_filename
+import os, re, json
+from flask import send_from_directory
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")
@@ -13,8 +17,81 @@ COUNTRY_CODE = {
     "سوريا": "sy", "فلسطين": "ps", "لبنان": "lb", "السودان": "sd", "المغرب": "ma",
     "الجزائر": "dz", "تونس": "tn", "تركيا": "tr",  # زوّدي اللي تحتاجيه
 }
+# يبني رابط العلم من كود الدولة (FlagCDN)
+def get_flag_url(nationality: str) -> str | None:
+    if not nationality:
+        return None
+
+    nat = nationality.strip()
+    # محاولات تبسيط بسيطة لو كان فيها إضافات
+    nat = nat.replace("ـ", "").replace("  ", " ")
+
+    # لو القاموس عربي صِرف، المطابقة ستكون مباشرة
+    cc = COUNTRY_CODE.get(nat)
+    if not cc:
+        # تطابق جزئي (مثلاً "السعودية - مكة")
+        for k, v in COUNTRY_CODE.items():
+            if k in nat:
+                cc = v
+                break
+
+    if not cc:
+        return None
+
+    # أحجام متاحة: w20/w40/w80/w160 - اختاري الأنسب
+    return f"https://flagcdn.com/w80/{cc}.png"
 
 
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
+
+UPLOAD_DIR = DATA_DIR / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
+# ربط الأدوية المختارة بأمراض محتملة
+MEDS_TO_CONDITIONS = {
+    "باراسيتامول (مسكن/خافض حرارة)": ["ارتفاع حرارة", "ألم خفيف"],
+    "إيبوبروفين (مضاد التهاب)": ["التهاب/ألم", "ارتفاع حرارة"],
+    "أوميبرازول (حموضة/ارتجاع)": ["ارتجاع/حموضة"],
+    "محلول إماهة فموية ORS": ["جفاف", "إجهاد حراري"],
+    "لوبراميد (الإسهال)": ["إسهال"],
+}
+# إذا وُجدت صورة دواء → أمراض القلب
+PHOTO_CONDITIONS = [
+    "ارتفاع ضغط الدم",
+    "قصور عضلة القلب",
+    "الذبحة الصدرية",
+    "اضطراب ضربات القلب",
+    "تجلطات أو أمراض الشرايين",
+]
+
+def infer_conditions_from_meds(meds_text: str) -> list[str]:
+    """قواعد بسيطة لاستنتاج أمراض محتملة من أسماء الأدوية."""
+    t = meds_text.lower()
+    rules = [
+        (r"ميتفورمين|metformin|انسولين|insulin", "سكري"),
+        (r"أملوديبين|amlodipine|ضغط|hypertension", "ضغط مرتفع"),
+        (r"سالبوتامول|بخاخ|salbutamol|ventolin|inhaler", "ربو محتمل"),
+        (r"أوميبرازول|omeprazole|حموضة|ارتجاع|g r d|gerd", "ارتجاع/حموضة"),
+        (r"وارفارين|warfarin|مميع|دواء سيولة", "سيولة/مضاد تخثر"),
+        (r"ibuprofen|إيبوبروفين", "ألم/التهاب"),
+        (r"paracetamol|باراسيتامول|panadol|بنادول", "ألم/حمّى"),
+        (r"ors|محلول إماهة|rehydration", "جفاف/إجهاد حراري"),
+        (r"لوبراميد|loperamide", "إسهال"),
+    ]
+    found = []
+    for pat, label in rules:
+        if re.search(pat, t):
+            found.append(label)
+    seen = set(); out = []
+    for x in found:
+        if x not in seen: seen.add(x); out.append(x)
+    return out
 # Disable caching in dev so CSS refreshes
 @app.after_request
 def add_no_cache_headers(resp):
@@ -90,35 +167,48 @@ def submit():
     nationality = request.form.get("nationality", "").strip()
     nusuk_id    = request.form.get("nusuk_id", "").strip()
     phone       = request.form.get("phone", "").strip()
-    blood_type = request.form.get("blood_type", "").strip()
+    blood_type  = request.form.get("blood_type", "").strip()
 
-    # --- Chronic diseases (multiple) ---
-    chronic_list = request.form.getlist("chronic")
-    chronic_other = request.form.get("chronic_other", "").strip()
-    if chronic_other:
-        chronic_list.append(f"أخرى: {chronic_other}")
-    chronic = "، ".join([c for c in chronic_list if c])
-
-    # --- Current medications (free text) ---
-    meds = request.form.get("meds", "").strip()
-
-    # --- Allergies (multiple) ---
-    allergies_list = request.form.getlist("allergies")
-    allergies_other = request.form.get("allergies_other", "").strip()
-    if allergies_other:
-        allergies_list.append(f"أخرى: {allergies_other}")
-    allergies = "، ".join([a for a in allergies_list if a])
-
-    # --- Vaccinations (free text) ---
-    vacc = request.form.get("vacc", "").strip()
-
-    # Required fields validation
+    # التحقق من المطلوب
     if not full_name or not age or not nationality or not nusuk_id or not phone:
         flash("الرجاء تعبئة الاسم والعمر والجنسية ورقم نسك ورقم الجوال")
         return redirect(url_for("index"))
 
+    # --- الأدوية (قائمة + أخرى) ---
+    meds_selected = request.form.get("meds_select", "").strip()
+    meds_other    = request.form.get("meds_other", "").strip()
+
+    # النص النهائي للدواء (للإكسل/العرض)
+    if meds_selected == "أخرى":
+        meds_text = meds_other or "أخرى"
+    else:
+        meds_text = meds_selected or ""
+
+    # --- رفع صورة الدواء (اختياري) ---
+    saved_file = None
+    if "meds_image" in request.files:
+        f = request.files.get("meds_image")
+        if f and f.filename and allowed_file(f.filename):
+            fname  = secure_filename(f.filename)
+            unique = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{fname}"
+            f.save(UPLOAD_DIR / unique)
+            saved_file = unique
+
+    # --- تحديد الأمراض المحتملة حسب المطلوب ---
+    # 1) إذا فيه صورة → أمراض القلب
+    # 2) وإلا لو اختار من القائمة → نشوف القاموس
+    # 3) وإلا → لا يوجد
+    if saved_file:
+        inferred_list = PHOTO_CONDITIONS
+    elif meds_selected and meds_selected != "أخرى":
+        inferred_list = MEDS_TO_CONDITIONS.get(meds_selected, [])
+    else:
+        inferred_list = []
+
+    inferred_text = "، ".join(inferred_list) if inferred_list else ""
+
     try:
-        # 1) Prepare record
+        # 1) تجهيز السجل
         record = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Full Name": full_name,
@@ -127,26 +217,27 @@ def submit():
             "Nusuk ID": nusuk_id,
             "Phone": phone,
             "Blood Type": blood_type,
-            "Chronic Conditions": chronic,
-            "Current Meds": meds,
-            "Allergies": allergies,
-            "Vaccinations": vacc,
+
+            # الحقول الخاصة بالأدوية والمنطق الجديد:
+            "Current Meds": meds_text,
+            "Inferred Conditions": inferred_text,   # قد تكون فارغة = لا يوجد
+            "Meds Photo": saved_file,               # اسم الملف أو None
         }
 
-        # 2) Upsert to Excel by Nusuk ID
+        # 2) Upsert إلى الإكسل بمفتاح رقم نسك
         append_to_excel(record, EXCEL_PATH)
 
-        # 3) Use Nusuk ID as record id
+        # 3) معرّف السجل (نفس رقم نسك)
         rid = re.sub(r"[^0-9]+", "", nusuk_id) or nusuk_id
         record["Record ID"] = rid
 
-        # 4) Save JSON snapshot
+        # 4) تخزين JSON للسجل
         REC_DIR = DATA_DIR / "records"
         REC_DIR.mkdir(exist_ok=True)
         with open(REC_DIR / f"{rid}.json", "w", encoding="utf-8") as f:
             json.dump(record, f, ensure_ascii=False, indent=2)
 
-        # 5) Build public URL & QR
+        # 5) إنشاء QR يوجّه إلى صفحة الشخص
         base = os.environ.get("BASE_URL", request.host_url.rstrip("/"))
         person_url = f"{base}/p/{rid}"
 
@@ -165,7 +256,7 @@ def submit():
         qr_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{re.sub(r'[^\w\-]+','_', full_name)[:32]}.png"
         img.save(qr_dir / qr_name)
 
-        print("QR URL =>", person_url)
+        # 6) صفحة النجاح
         return render_template(
             "success.html",
             qr_url=url_for("qr_file", fname=qr_name),
@@ -187,18 +278,37 @@ def qr_file(fname):
 @app.route("/p/<rid>")
 def person_view(rid):
     import json
+    from datetime import datetime
+
     rec_path = DATA_DIR / "records" / f"{rid}.json"
     if not rec_path.exists():
-        flash("لم يتم العثور على السجل"); return redirect(url_for("index"))
+        flash("السجل غير موجود")
+        return redirect(url_for("index"))
 
     with open(rec_path, "r", encoding="utf-8") as f:
         rec = json.load(f)
 
-    nat = (rec.get("Nationality") or "").strip()
-    code = COUNTRY_CODE.get(nat)
-    flag_url = f"https://flagcdn.com/w80/{code}.png" if code else None
-    return render_template("person.html", rec=rec, flag_url=flag_url)
+    # ✅ احسب رابط العلم من الجنسية
+    flag_url = get_flag_url(rec.get("Nationality", ""))
 
+    # (اختياري) رابط صورة الدواء إن وجد
+    photo_name = (rec.get("Meds Photo") or "").strip()
+    meds_photo_url = url_for("uploaded_file", fname=photo_name) if photo_name else None
+
+    # cache-buster بسيط
+    ts = int(datetime.now().timestamp())
+
+    return render_template(
+        "person.html",
+        rec=rec,
+        flag_url=flag_url,          # ← مررناه هنا
+        meds_photo_url=meds_photo_url,
+        ts=ts,
+    )
+
+@app.route("/u/<path:fname>")
+def uploaded_file(fname):
+    return send_from_directory(UPLOAD_DIR, fname, as_attachment=False)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)

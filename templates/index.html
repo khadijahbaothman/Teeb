@@ -6,13 +6,14 @@
   <div class="hero-center">
     <div>
       <h1 class="hero-title">البيانات الطبية الأساسية</h1>
-      <p class="hero-sub">عبّئ الحقول بدقة. يتم الحفظ داخليًا، ويُنشأ رمز QR مربوط برقم نسك (يتم التحديث إذا تكرر رقم نسك).</p>
+      <p class="hero-sub">عبّئ الحقول بدقة. يتم الحفظ داخليًا، ويُنشأ رمز QR مربوط برقم نسك (يتم التحديث إذا تكرر رقم
+        نسك).</p>
     </div>
   </div>
 </section>
 
 <section class="card glass">
-  <form action="{{ url_for('submit') }}" method="post" class="form-grid">
+  <form action="{{ url_for('submit') }}" method="post" class="form-grid" enctype="multipart/form-data">
 
     <!-- معلومات أساسية -->
     <div class="field">
@@ -114,7 +115,7 @@
         <option value="إستونيا">
         <option value="أيسلندا">
         <option value="نيوزيلندا">
-        <!-- ... تقدري تضيفي باقي الدول لو حبيتي -->
+          <!-- ... تقدري تضيفي باقي الدول لو حبيتي -->
       </datalist>
     </div>
 
@@ -143,97 +144,85 @@
       </select>
     </div>
 
-    <!-- الأمراض المزمنة (متعددة) -->
-    <div class="field full">
-      <label>الأمراض المزمنة (اختر ما ينطبق)</label>
-      <div class="multi-list">
-        <!-- نفس الاسم chronic ليتم تجميعها في باك إند -->
-        <label><input type="checkbox" name="chronic" value="سكري (Type II)"> سكري (Type II)</label>
-        <label><input type="checkbox" name="chronic" value="سكري (Type I)"> سكري (Type I)</label>
-        <label><input type="checkbox" name="chronic" value="ضغط دم عالي"> ضغط دم عالي</label>
-        <label><input type="checkbox" name="chronic" value="أمراض قلبية"> أمراض قلبية</label>
-        <label><input type="checkbox" name="chronic" value="ربو"> ربو</label>
-        <label><input type="checkbox" name="chronic" value="أمراض كلوية"> أمراض كلوية</label>
-        <label><input type="checkbox" name="chronic" value="أمراض كبدية"> أمراض كبدية</label>
-        <label><input type="checkbox" name="chronic" value="سرطان (تحت علاج/متابعة)"> سرطان (تحت علاج/متابعة)</label>
-        <label><input type="checkbox" name="chronic" value="اضطراب الغدة الدرقية"> اضطراب الغدة الدرقية</label>
-        <label><input type="checkbox" name="chronic" value="السمنة"> السمنة</label>
-        <label><input type="checkbox" name="chronic" value="أخرى" id="chronic_other_chk"> أخرى</label>
-      </div>
-      <input id="chronic_other_text" name="chronic_other" class="mt8" placeholder="اذكر المرض المزمن الآخر" style="display:none">
-    </div>
 
+    <!-- الأدوية أثناء الحج -->
     <!-- الأدوية الحالية -->
     <div class="field full">
       <label>الأدوية الحالية</label>
-      <textarea name="meds" rows="3" placeholder="ميتفورمين 500mg — مرتين يومياً&#10;أملوديبين 5mg — يومياً"></textarea>
+      <select name="meds_select" id="meds_select">
+        <option value="" selected>لا يوجد</option>
+        <option value="باراسيتامول (مسكن/خافض حرارة)">باراسيتامول (مسكن/خافض حرارة)</option>
+        <option value="إيبوبروفين (مضاد التهاب)">إيبوبروفين (مضاد التهاب)</option>
+        <option value="أوميبرازول (حموضة/ارتجاع)">أوميبرازول (حموضة/ارتجاع)</option>
+        <option value="محلول إماهة فموية ORS">محلول إماهة فموية ORS</option>
+        <option value="لوبراميد (الإسهال)">لوبراميد (الإسهال)</option>
+        <option value="أخرى">أخرى</option>
+      </select>
     </div>
-
-    <!-- الحساسيّات (متعددة) -->
+  
+    <!-- يظهر فقط إذا اختار "أخرى" -->
+    <div class="field full" id="other_meds_field" style="display:none;">
+      <label>اذكر اسم الدواء الآخر</label>
+      <input type="text" name="meds_other" placeholder="اكتب اسم الدواء هنا">
+    </div>
+  
+    <!-- صورة الدواء (اختياري) -->
     <div class="field full">
-      <label>الحساسيّات (اختياري)</label>
-      <div class="multi-list">
-        <label><input type="checkbox" name="allergies" value="بنسيلين"> بنسيلين</label>
-        <label><input type="checkbox" name="allergies" value="سيفالوسبورين"> سيفالوسبورين</label>
-        <label><input type="checkbox" name="allergies" value="أموكسيسيلين"> أموكسيسيلين</label>
-        <label><input type="checkbox" name="allergies" value="الأسبرين/NSAIDs"> الأسبرين/NSAIDs</label>
-        <label><input type="checkbox" name="allergies" value="اللاكتوز"> اللاكتوز</label>
-        <label><input type="checkbox" name="allergies" value="الفول السوداني/المكسّرات"> الفول السوداني/المكسّرات</label>
-        <label><input type="checkbox" name="allergies" value="الجلوتين (قمح)"> الجلوتين (قمح)</label>
-        <label><input type="checkbox" name="allergies" value="غبار/حبوب لقاح"> غبار/حبوب لقاح</label>
-        <label><input type="checkbox" name="allergies" value="أخرى" id="allergies_other_chk"> أخرى</label>
-      </div>
-      <input id="allergies_other_text" name="allergies_other" class="mt8" placeholder="اذكر الحساسية الأخرى" style="display:none">
+      <label>صورة الدواء (اختياري)</label>
+      <input type="file" name="meds_image" accept="image/*" capture="environment">
+      <small class="muted">يمكنك تصوير علبة الدواء/الروشتة لسهولة المراجعة</small>
     </div>
-
-    <!-- التطعيمات -->
-    <div class="field full">
-      <label>التطعيمات</label>
-      <textarea name="vacc" rows="2" placeholder="كوفيد (3 جرعات) — آخر جرعة: 2024-10-01"></textarea>
-    </div>
-
+  
+    <!-- زر الإرسال -->
     <div class="actions">
-      <button class="btn" type="submit">إرسال وإنشاء/تحديث QR</button>
+      <button class="btn" type="submit">إرسال</button>
     </div>
   </form>
 </section>
 
 <!-- سكرِبت إظهار/إخفاء “أخرى” -->
 <script>
-const chOtherChk  = document.getElementById('chronic_other_chk');
-const chOtherText = document.getElementById('chronic_other_text');
-if (chOtherChk) {
-  chOtherChk.addEventListener('change', e => {
-    chOtherText.style.display = e.target.checked ? 'block' : 'none';
-    if (!e.target.checked) chOtherText.value = '';
+  document.addEventListener("DOMContentLoaded", () => {
+    const select = document.getElementById("meds_select");
+    const otherField = document.getElementById("other_meds_field");
+    select.addEventListener("change", () => {
+      if (select.value === "أخرى"){
+        otherField.style.display = "block";
+      } else {
+        otherField.style.display = "none";
+        otherField.querySelector("input").value = "";
+      }
+    });
   });
-}
-
-const alOtherChk  = document.getElementById('allergies_other_chk');
-const alOtherText = document.getElementById('allergies_other_text');
-if (alOtherChk) {
-  alOtherChk.addEventListener('change', e => {
-    alOtherText.style.display = e.target.checked ? 'block' : 'none';
-    if (!e.target.checked) alOtherText.value = '';
-  });
-}
-</script>
+  </script>
 
 <style>
-/* تحسين شكل قوائم الاختيار المتعددة */
-.multi-list{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap:8px 16px;
-}
-.multi-list label{
-  display:flex; align-items:center; gap:8px;
-  padding:8px 10px; border:1px solid var(--border); border-radius:12px; background:#fff;
-}
-.mt8{ margin-top:8px }
-@media (max-width: 720px){
-  .multi-list{ grid-template-columns:1fr; }
-}
+  /* تحسين شكل قوائم الاختيار المتعددة */
+  .multi-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+  }
+
+  .multi-list label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .mt8 {
+    margin-top: 8px
+  }
+
+  @media (max-width: 720px) {
+    .multi-list {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 {% endblock %}
