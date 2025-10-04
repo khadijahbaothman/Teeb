@@ -1,580 +1,241 @@
 {% extends 'base.html' %}
-{% block title %}ملخص التاريخ الطبي{% endblock %}
+{% block title %}ملخص التاريخ الطبي للحاج{% endblock %}
 
 {% block content %}
-
 <section class="person-wrap">
-
-  <!-- شارة وسط (اختياري: static/badge.png) -->
-  <div class="center-badge">
-    <img src="{{ url_for('static', filename='badge.png') }}" alt="badge" onerror="this.style.display='none'">
-  </div>
-
-  <!-- الكرت الرئيسي -->
   <div class="person-sheet card glass">
-    <h1 class="person-heading">ملخص التاريخ الطبي</h1>
 
-    <!-- الهيدر: علم + جنسية | اسم + رقم نسك -->
-    <div class="header-row">
-      <div class="left-flag">
+      <!-- عنوان -->
+      <h1 class="person-heading">ملخص التاريخ الطبي </h1>
+
+    <!-- شعار طيب الأعلى (عدّلي اسم الملف إن لزم) -->
+    <div class="top-logo">
+      <img src="{{ url_for('static', filename='logo33.png') }}" alt="Tayyeb" onerror="this.style.display='none'">
+    </div>
+
+
+    <!-- شارة رقم نسك (بوكس) -->
+    <div class="nusuk-box">رقم نسك: {{ rec.get("Nusuk ID","—") }}</div>
+
+    <!-- هيدر البطاقة -->
+    <div class="header-row persona">
+      <!-- يسار: علم + جنسية -->
+
+
+      <!-- وسط/يمين: اسم -->
+      <div class="id-block">
+        <div class="name">{{ rec.get("Full Name","—") }}</div>
+      </div>
+ <div class="left-flag">
         {% if flag_url %}
-          <img class="flag" src="{{ flag_url }}" alt="flag"
-               crossorigin="anonymous" referrerpolicy="no-referrer">
+          <img class="flag" src="{{ flag_url }}" alt="flag" crossorigin="anonymous" referrerpolicy="no-referrer">
         {% else %}
           <div class="flag fallback">🌍</div>
         {% endif %}
         <div class="nat-label">{{ rec.get("Nationality","—") }}</div>
       </div>
+    </div>
 
-      <div class="id-block">
-        <div class="name">{{ rec.get("Full Name","—") }}</div>
-        <div class="nusuk-box">رقم نسك: {{ rec.get("Nusuk ID","—") }}</div>
-        <div class="subline" dir="rtl">
-          <span>العمر: {{ rec.get("Age","—") }}</span>
-          <span class="dot">•</span>
-          <span>رقم الجوال: {{ rec.get("Phone","—") }}</span>
-          {% if rec.get("Blood Type") %}
-          <span class="dot">•</span>
-          <span>فصيلة الدم: {{ rec.get("Blood Type") }}</span>
-          {% endif %}
-        </div>
-      </div>
+    <!-- شارة العمر وفصيلة الدم -->
+    <div class="badges-row">
+      <span class="pill pill-red">فصيلة الدم: {{ rec.get("Blood Type","—") }}</span>
+      <span class="pill pill-dark">العمر: {{ rec.get("Age","—") }}</span>
     </div>
 
     <hr class="soft-divider">
 
-    <!-- ✅ الأقسام التفصيلية (تكون مخفية إلى أن ينجح التحقق) -->
-    <div class="grid-two details-wrap">
-      <!-- الأمراض المحتملة -->
-      <div class="section">
-        <h3 class="sec-title">الأمراض المحتملة</h3>
-        {% set inf = (rec.get("Inferred Conditions","") or "").strip() %}
-        {% if inf %}
-        <div class="tag-list">
-          {% for item in inf.split("،") if item.strip() %}
-          <span class="tag">{{ item.strip() }}</span>
-          {% endfor %}
-        </div>
-        {% else %}
-        <span class="tag tag-empty">لا يوجد</span>
-        {% endif %}
-      </div>
+    <!-- تفاصيل البطاقة (مخفية حتى الضغط على طيب والتحقق) -->
+ <!-- تفاصيل البطاقة (مخفية حتى الضغط على طيب والتحقق) -->
+<div class="details-wrap">
 
-      <!-- الأدوية المستخدمة -->
-<div class="section">
-  <h3 class="sec-title">الأدوية المستخدمة</h3>
+  <!-- 1) الأدوية الحالية -->
+  <div class="section">
+    <h3 class="sec-title strong">الأدوية الحالية</h3>
 
-  {% if meds_photo_url %}
-    <!-- لو فيه صورة: نعرض القائمة الثابتة -->
-    <ol class="meds-list">
-      <li>💊 دايموكساميد (Diamoxamide – Acetazolamide 250 mg)</li>
-      <li>💊 نورأكتون (Noractone – Spironolactone 25 mg)</li>
-      <li>💊 إنتريستو (Entresto – Sacubitril/Valsartan 50 mg)</li>
-      <li>💊 ميتولينا (Metolina – Metoprolol Tartrate 50 mg)</li>
-      <li>💊 باكوكسن (Bakoxin – Digoxin 0.25 mg)</li>
-    </ol>
-  {% else %}
-    <!-- بدون صورة: نعرض الدواء المختار من النموذج -->
-    {% set meds_text = (rec.get("Current Meds","") or "").strip() %}
-    {% if meds_text %}
-      <div class="tag-list">
-        <span class="tag">{{ meds_text }}</span>
-      </div>
+    {% if rec.get("Meds Photo") %}
+      <!-- عند وجود صورة: نعرض اللستة الثابتة -->
+      <ul class="dot-list">
+        <li>💊 Glucophage (ميتفورمين 500 مجم)</li>
+        <li>💊 Aspirin Protect 100 (أسبرين بروتكت 100 مجم)</li>
+        <li>💊 Amlor (أملور 5 مجم)</li>
+      </ul>
     {% else %}
-      <span class="tag tag-empty">لا يوجد</span>
+      <!-- بدون صورة: نعرض ما اختاره/كتبه المستخدم -->
+      <ul class="dot-list">
+        {% if rec.get("Current Meds") %}
+          {% for line in rec.get("Current Meds","").splitlines() if line.strip() %}
+            <li>{{ line.strip() }}</li>
+          {% endfor %}
+        {% else %}
+          <li class="muted">—</li>
+        {% endif %}
+      </ul>
     {% endif %}
+  </div>
+
+  <!-- 2) الأمراض المزمنة -->
+  <div class="section">
+    <h3 class="sec-title strong">الأمراض المزمنة</h3>
+    <div class="tag-list">
+      {% set chronic_txt = (rec.get("Chronic Conditions","") or "").replace('\n','،') %}
+      {% set has_any = false %}
+      {% for item in chronic_txt.split("،") if item.strip() %}
+        {% set has_any = true %}
+        <span class="tag">{{ item.strip() }}</span>
+      {% endfor %}
+      {% if not has_any %}
+        <span class="tag tag-empty">—</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 3) صورة الدواء (الأخير) -->
+  {% if rec.get("Meds Photo") %}
+    <div class="section">
+      <h3 class="sec-title strong">صورة الدواء</h3>
+      <img src="{{ url_for('uploaded_file', fname=rec['Meds Photo']) }}"
+           alt="صورة الدواء" class="meds-img">
+    </div>
   {% endif %}
+
 </div>
 
-      <!-- صورة الدواء -->
-      <div class="section">
-        <h3 class="sec-title">صورة الدواء</h3>
-        {% if rec.get("Meds Photo") %}
-        <img src="{{ url_for('uploaded_file', fname=rec['Meds Photo']) }}" alt="صورة الدواء"
-          style="width:180px; border-radius:12px; border:1px solid #e5e7eb;">
-        {% else %}
-        <!-- <div class="muted">لم تُرفع صورة للدواء</div> -->
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- أزرار أسفل -->
+    <!-- أزرار أسفل (زر طيب + طباعة) -->
     <div class="sheet-actions">
-      <!-- زر طيب (يكشف التفاصيل بعد التحقق) -->
-      <button class="btn btn-ok" id="okBtn" type="button" style="margin-right:auto;">فريق طِيب</button>
-
-      <!-- <button class="btn btn-danger" id="panicBtn" type="button">طلب المساعدة / الدعم</button> -->
+      <button id="okBtn" class="btn btn-ok">فريق طِيب</button>
       <button class="btn btn-dark" onclick="window.print()">طباعة</button>
     </div>
 
   </div>
 </section>
 
-<!-- واتساب + الموقع -->
+<!-- ===== بوب-أب التحقق + إظهار التفاصيل ===== -->
 <script>
-  (function () {
-    const SUPPORT_NUMBER = "966543483543"; // ← غيّريه
-    let detailsUnlocked = false;
+(function () {
+  // زر "طيب" → يفتح بوب-أب للتحقق ثم يُظهر التفاصيل
+  document.getElementById('okBtn')?.addEventListener('click', showPopup);
 
-    // أخفِ كل التفاصيل عند التحميل (لو الCSS ما تُطبّق لأي سبب)
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.details-wrap').forEach(el => {
-        el.style.display = 'none';
-      });
-    });
+  function showPopup(){
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,.7);
+      display:flex; align-items:center; justify-content:center; z-index:9999;
+    `;
+    overlay.innerHTML = `
+      <div style="
+        background:#fff; padding:30px; border-radius:20px;
+        box-shadow:0 10px 40px rgba(0,0,0,.3); text-align:center;
+        max-width:320px; width:90%; font-family:'Tajawal',sans-serif;
+      ">
+        <h2 style="margin-bottom:14px; font-size:20px;">التحقق من الصلاحية</h2>
+        <p style="margin-bottom:16px; color:#444;">أدخل الرقم السري لعرض كامل البيانات</p>
+        <input type="password" id="idInput" placeholder="•••••"
+          style="width:100%; padding:10px; border:1px solid #ccc; border-radius:12px; text-align:center; font-size:16px;">
+        <div id="errorMsg" style="color:#ef4444; margin-top:8px; display:none;">❌ الرقم غير صحيح</div>
+        <button id="submitId"
+          style="margin-top:16px; background:#0f766e; color:#fff; border:none; border-radius:12px; padding:10px 16px; font-weight:700; cursor:pointer;">
+          تحقق
+        </button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
 
-    function buildMessage({ mode = 'basic', withLocation, lat, lon } = {}) {
-      const name  = "{{ rec.get('Full Name', '—') }}";
-      const nusuk = "{{ rec.get('Nusuk ID', '—') }}";
-      const age   = "{{ rec.get('Age', '—') }}";
-      const nat   = "{{ rec.get('Nationality', '—') }}";
-      const phone = "{{ rec.get('Phone', '—') }}";
-      const blood = "{{ rec.get('Blood Type', '—') }}";
-      const meds  = `{{ rec.get('Current Meds', '—') }}`.replace(/\n/g, ', ');
-      const inf   = `{{ rec.get('Inferred Conditions', '—') }}`.replace(/\n/g, ', ');
-
-      let msg =
-        `🚨 *طلب مساعدة عاجل لحاج*\n\n` +
-        `👤 الاسم: ${name}\n` +
-        `🪪 رقم نسك: ${nusuk}\n` +
-        `🌍 الجنسية: ${nat}\n` +
-        `🎂 العمر: ${age}\n`;
-
-      if (mode === 'full') {
-        msg +=
-          `📱 رقم الجوال: ${phone}\n` +
-          (blood && blood !== "—" ? `🩸 فصيلة الدم: ${blood}\n` : "") +
-          (inf   && inf   !== "—" ? `\n🧩 *أمراض محتملة:* ${inf}\n` : "") +
-          (meds  && meds  !== "—" ? `💊 *الأدوية:* ${meds}\n` : "");
-      }
-
-      if (withLocation && lat && lon) {
-        msg += `\n📍 *موقع الحاج:* https://www.google.com/maps?q=${lat},${lon}\n`;
+    const correctCode = "99999";
+    const doCheck = () => {
+      const input = document.getElementById("idInput").value.trim();
+      const error = document.getElementById("errorMsg");
+      if (input === correctCode) {
+        overlay.remove();
+        const details = document.querySelector(".details-wrap");
+        if (details){ details.style.display = "grid"; details.classList.add("reveal"); }
+        document.getElementById('okBtn')?.remove();
       } else {
-        msg += `\n⚠️ لم يتم إرفاق الموقع.\n`;
+        error.style.display = "block";
+        setTimeout(()=>{ error.style.display = "none"; }, 1600);
       }
-      msg += `\n🔴 الرجاء التعامل مع الحالة فورًا.`;
-      return msg;
-    }
-
-    function openWhatsApp(message, targetWin) {
-      const encoded = encodeURIComponent(message);
-      const urlApp = `whatsapp://send?phone=${SUPPORT_NUMBER}&text=${encoded}`;
-      const urlWeb = `https://wa.me/${SUPPORT_NUMBER}?text=${encoded}`;
-      try { (targetWin || window).location.href = urlApp; } catch (e) {}
-      setTimeout(() => { try { (targetWin || window).location.href = urlWeb; } catch (e) {} }, 900);
-    }
-
-    // زر الطوارئ
-    document.getElementById('panicBtn')?.addEventListener('click', () => {
-      const modeToUse = (detailsUnlocked ? 'full' : 'basic');
-      const send = (lat = null, lon = null) => {
-        const msg = buildMessage({ mode: modeToUse, withLocation: !!(lat && lon), lat, lon });
-        openWhatsApp(msg, window);
-      };
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => send(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6)),
-          _   => send(),
-          { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
-        );
-      } else {
-        send();
-      }
-    });
-
-    // زر "طيب" → فتح بوب-أب والتحقق ثم إظهار التفاصيل
-    document.getElementById('okBtn')?.addEventListener('click', showPopup);
-
-    function showPopup() {
-      const overlay = document.createElement("div");
-      overlay.style.cssText = `
-        position:fixed; inset:0; background:rgba(0,0,0,.7);
-        display:flex; align-items:center; justify-content:center; z-index:9999;
-      `;
-      overlay.innerHTML = `
-        <div style="
-          background:#fff; padding:30px; border-radius:20px;
-          box-shadow:0 10px 40px rgba(0,0,0,.3); text-align:center;
-          max-width:320px; width:90%; font-family:'Tajawal',sans-serif;
-        ">
-          <h2 style="margin-bottom:14px; font-size:20px;">التحقق من الصلاحية</h2>
-          <p style="margin-bottom:16px; color:#444;">أدخل الرقم السري لعرض كامل البيانات</p>
-          <input type="password" id="idInput" placeholder="•••••"
-            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:12px; text-align:center; font-size:16px;">
-          <div id="errorMsg" style="color:#ef4444; margin-top:8px; display:none;">❌ الرقم غير صحيح</div>
-          <button id="submitId"
-            style="margin-top:16px; background:#0f766e; color:#fff; border:none; border-radius:12px; padding:10px 16px; font-weight:700; cursor:pointer;">
-            تحقق
-          </button>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-
-      const correctCode = "99999";
-      const doCheck = () => {
-        const input = document.getElementById("idInput").value.trim();
-        const error = document.getElementById("errorMsg");
-        if (input === correctCode) {
-          overlay.remove();
-          // أظهر كل التفاصيل
-          document.querySelectorAll('.details-wrap').forEach(el => {
-            el.style.display = '';          // نظّف inline style إن وُجد
-            el.classList.add('reveal');     // يفعل grid من CSS
-          });
-          // اخفِ زر طيب وفعل الوضع الكامل للطوارئ
-          document.getElementById('okBtn')?.remove();
-          detailsUnlocked = true;
-        } else {
-          error.style.display = "block";
-          setTimeout(() => { error.style.display = "none"; }, 1600);
-        }
-      };
-
-      document.getElementById("submitId").addEventListener("click", doCheck);
-      document.getElementById("idInput").addEventListener("keyup", e => { if (e.key === "Enter") doCheck(); });
-      document.getElementById("idInput").focus();
-    }
-  })();
+    };
+    document.getElementById("submitId").addEventListener("click", doCheck);
+    document.getElementById("idInput").addEventListener("keyup", e => { if(e.key==="Enter") doCheck(); });
+    document.getElementById("idInput").focus();
+  }
+})();
 </script>
 
-
 <style>
-  /* ===== PERSON PAGE LAYOUT ===== */
-  .person-wrap {
-    margin-top: 10px;
-  }
+/* ===== الصفحة والبطاقة ===== */
+.person-wrap{ margin-top:10px; }
+.person-heading{ text-align:center; font-size:28px; font-weight:900; margin:0 0 10px; color:#111827; }
+.person-sheet{
+  position:relative; background:#fff; border:1px solid var(--border, #e5e7eb);
+  border-radius:28px; padding:24px 20px 20px; box-shadow:0 18px 40px rgba(0,0,0,.08); z-index:50;
+}
+.card.glass{ background:rgba(255,255,255,.75); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.55); }
 
-  .person-heading {
-    text-align: center;
-    font-size: 28px;
-    font-weight: 900;
-    margin: 0 0 10px;
-    color: #34B8EC;
-  }
+/* شعار طيب أعلى */
+.top-logo{ display:flex; justify-content:center; margin-bottom:8px; }
+.top-logo img{ height:48px; width:auto; }
 
-  .center-badge {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 10px;
-  }
-
-  .center-badge img {
-    height: 56px;
-    width: auto;
-  }
-
-  .person-sheet {
-    position: relative;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 28px;
-    padding: 22px 20px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, .08);
-    z-index: 50;
-  }
-
-  /* زر طيب بلونك */
-  .btn-ok {
-    background: #34B8EC;
-    color: #fff;
-    border: 1px solid #34B8EC;
-    box-shadow: 0 6px 16px rgba(52, 184, 236, .28);
-    border-radius: 16px;
-    padding: 10px 16px;
-    font-weight: 900;
-    cursor: pointer;
-  }
-
-  .btn-ok:hover {
-    background: #1fa7df;
-    border-color: #1fa7df;
-  }
-
-  .basic-info {
-    margin-bottom: 16px;
-    background: #f9fafb;
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid #e5e7eb;
-  }
-
-  /* header block */
-  .header-row {
-    display: grid;
-    grid-template-columns: 140px 1fr;
-    gap: 16px;
-    align-items: center;
-  }
-
-  .left-flag {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .flag {
-    width: 62px;
-    height: 42px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-  }
-
-  .flag.fallback {
-    width: 62px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f1f5f9;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    font-size: 22px;
-  }
-
-  .nat-label {
-    font-weight: 800;
-    color: #111827;
-  }
-
-  .id-block .name {
-    font-size: 22px;
-    font-weight: 900;
-    line-height: 1.25;
-  }
-
-  .id-block .subline {
-    margin-top: 6px;
-    color: #374151;
-    font-weight: 700;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    direction: rtl;
-  }
-  .meds-list{
-  margin: 0;
-  padding-inline-start: 1.2rem;
-  line-height: 1.7;
-  color:#374151;
-  font-weight:700;
+/* شارة رقم نسك (بوكس) */
+.nusuk-box{
+  position:absolute; left:22px; top:18px;
+  background:#ecfeff; color:#0369a1; border:2px solid #34B8EC;
+  border-radius:14px; padding:6px 16px; font-weight:800; font-size:16px;
+  box-shadow:0 2px 6px rgba(3,105,161,.12); white-space:nowrap;
+}
+@media (max-width:640px){
+  .nusuk-box{ position:relative; left:auto; top:auto; display:inline-block; margin:6px auto 4px; }
 }
 
-  .subline span {
-    white-space: nowrap;
-  }
+/* هيدر */
+.header-row.persona{ display:grid; grid-template-columns: 1fr auto auto; gap:14px; align-items:center;  }
+.flag{ width:52px; height:36px; object-fit:cover; border-radius:6px; border:1px solid #e5e7eb; }
+.flag.fallback{ display:flex; align-items:center; justify-content:center; background:#f1f5f9; }
+.nat-label{ font-weight:800; color:#111827; }
+.id-block .name{ font-size:22px; font-weight:900; line-height:1.2; }
+.avatar{ width:46px; height:46px; border-radius:50%; background:#f3f4f6; display:flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; }
+.avatar-icon{ font-size:22px; }
 
-  .subline .dot {
-    opacity: .5;
-    margin: 0 2px;
-  }
+/* بادجات */
+.badges-row{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 4px; }
+.pill{ display:inline-block; padding:8px 16px; border-radius:999px; font-weight:800; font-size:16px; border:2px solid transparent; }
+.pill-red{ background:#ffe4e6; color:#9f1239; border-color:#fecdd3; }
+.pill-dark{ background:#0f172a; color:#fff; border-color:#0f172a; }
 
-  .soft-divider {
-    border: none;
-    border-top: 1px solid #eef2f7;
-    margin: 14px 0 12px;
-  }
+/* أقسام */
+.sec-title{ font-size:20px; font-weight:900; margin:0 0 8px; color:#111827; }
+.sec-title.strong{ font-size:26px; }
+.sub-sec{ margin:10px 0 6px; font-weight:800; }
 
-  /* sections grid (المخفية أولاً) */
-  .grid-two {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-  }
+.tag-list{ display:flex; flex-wrap:wrap; gap:8px; }
+.tag{ background:#ecfeff; color:#0369a1; border:1.5px solid #67e8f9; padding:6px 12px; border-radius:999px; font-weight:800; font-size:14px; }
+.tag-empty{ background:#f3f4f6; border-color:#e5e7eb; color:#6b7280; }
 
-  .sec-title {
-    font-size: 20px;
-    font-weight: 900;
-    margin: 0 0 8px;
-    color: #111827;
-  }
+.dot-list{ margin:0; padding-inline-start:1.2rem; }
+.dot-list li{ margin:6px 0; }
+.mt6{ margin-top:6px; }
 
-  /* تأثير كشف لطيف */
-  .reveal {
-    animation: fadeIn .3s ease-out both;
-  }
+/* صورة الدواء */
+.meds-img{ width:220px; max-width:100%; border-radius:12px; border:1px solid #e5e7eb; }
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
+/* التفاصيل مخفية افتراضياً */
+.details-wrap{ display:none; grid-template-columns: 1fr; gap:18px; }
+.details-wrap.reveal{ animation: fadeIn .25s ease-in; }
+@keyframes fadeIn{ from{opacity:.4} to{opacity:1} }
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+/* أزرار أسفل */
+.sheet-actions{ display:flex; gap:12px; justify-content:flex-end; margin-top:16px; }
+.btn{ border-radius:16px; padding:10px 16px; font-weight:900; border:1px solid transparent; cursor:pointer; }
+.btn-dark{ background:#111827; color:#fff; }
+.btn-dark:hover{ background:#0b1220; }
+.btn-ok{ background:#34B8EC; color:#fff; border:1px solid #34B8EC; box-shadow:0 6px 16px rgba(52,184,236,.28); }
+.btn-ok:hover{ background:#1fa7df; border-color:#1fa7df; }
 
-  /* tag boxes */
-  .tag-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .tag {
-    background: #ecfeff;
-    color: #0369a1;
-    border: 1.5px solid #67e8f9;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-weight: 800;
-    font-size: 14px;
-  }
-
-  .tag-empty {
-    background: #f3f4f6;
-    border-color: #e5e7eb;
-    color: #6b7280;
-  }
-
-  /* dot lists */
-  .dot-list {
-    margin: 0;
-    padding-inline-start: 1.2rem;
-  }
-
-  .dot-list li {
-    margin: 6px 0;
-  }
-
-  /* bottom actions */
-  .sheet-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 16px;
-  }
-
-  .btn {
-    border-radius: 16px;
-    padding: 10px 16px;
-    font-weight: 900;
-    border: 1px solid transparent;
-    cursor: pointer;
-  }
-
-  .btn-dark {
-    background: #111827;
-    color: #fff;
-  }
-
-  .btn-dark:hover {
-    background: #0b1220;
-  }
-
-  .btn-danger {
-    background: #ef4444;
-    color: #fff;
-    box-shadow: 0 10px 20px rgba(239, 68, 68, .24);
-  }
-
-  .btn-danger:hover {
-    background: #dc2626;
-  }
-
-  .card.glass {
-    background: rgba(255, 255, 255, .75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, .55);
-  }
-
-  .nusuk-box {
-    position: absolute;
-    left: 24px;
-    top: 18px;
-    background: #ecfeff;
-    color: #0369a1;
-    border: 2px solid #34B8EC;
-    border-radius: 14px;
-    padding: 6px 16px;
-    font-weight: 800;
-    font-size: 16px;
-    box-shadow: 0 2px 6px rgba(3, 105, 161, .12);
-    white-space: nowrap;
-  }
-
-  /* Responsive */
-  @media (max-width: 640px) {
-    .person-sheet {
-      padding: 16px 14px;
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .person-heading {
-      font-size: 24px;
-      margin-bottom: 6px;
-    }
-
-    .header-row {
-      grid-template-columns: 1fr;
-      gap: 10px;
-      align-items: flex-start;
-    }
-
-    .nusuk-box {
-      position: relative;
-      left: auto;
-      top: auto;
-      margin: 6px 0 4px;
-      display: inline-block;
-      font-size: 15px;
-    }
-
-    .id-block .name {
-      font-size: 20px;
-    }
-
-    .grid-two {
-      grid-template-columns: 1fr;
-      gap: 14px;
-    }
-
-    .sec-title {
-      font-size: 18px;
-    }
-
-    .tag {
-      font-size: 13px;
-      padding: 6px 10px;
-    }
-
-    .sheet-actions {
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .sheet-actions .btn {
-      width: 100%;
-      text-align: center;
-    }
-  }
-
-  @media print {
-
-    header.nav,
-    .footer {
-      display: none !important;
-    }
-
-    body {
-      background: #fff !important;
-    }
-
-    .person-sheet {
-      box-shadow: none;
-      border: 1px solid #ddd;
-    }
-
-    .sheet-actions {
-      display: none !important;
-    }
-  }
+/* موبايل */
+@media (max-width:640px){
+  .header-row.persona{ grid-template-columns: 1fr auto; }
+  .avatar{ grid-column:2/3; }
+  .id-block .name{ font-size:20px; }
+  .sec-title.strong{ font-size:22px; }
+}
 </style>
-
 {% endblock %}

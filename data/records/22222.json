@@ -1,14 +1,14 @@
 {
-  "Timestamp": "2025-10-02 16:40:00",
+  "Timestamp": "2025-10-04 12:08:31",
   "Full Name": "أبي غلام",
-  "Age": "21",
+  "Age": "22",
   "Nationality": "السعودية",
   "Nusuk ID": "22222",
-  "Phone": "05581340323",
+  "Phone": "0554420060",
   "Blood Type": "B+",
-  "Chronic Conditions": "سكري (Type I)، اضطراب الغدة الدرقية",
-  "Current Meds": "بنادول 500G",
-  "Allergies": "سيفالوسبورين، الأسبرين/NSAIDs، الجلوتين (قمح)",
-  "Vaccinations": "كوفيد",
+  "Chronic Conditions": "ارتفاع ضغط الدم، سكري ||، جلطة قلبيه",
+  "Current Meds": "أوميبرازول (حموضة/ارتجاع)",
+  "Inferred Conditions": "ارتفاع ضغط الدم، سكري ||، جلطة قلبيه",
+  "Meds Photo": "20251004120831_WhatsApp_Image_2025-10-04_at_10.36.13.jpeg",
   "Record ID": "22222"
 }
